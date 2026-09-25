@@ -1,4 +1,24 @@
 from pydantic import BaseModel, Field
+from typing import Literal
+
+
+def build_selection_schema(work_ids, act_ids, edu_ids, proj_ids):
+    WorkId = Literal[tuple(work_ids)] if work_ids else None
+    ActId = Literal[tuple(act_ids)] if act_ids else None
+    EduId = Literal[tuple(edu_ids)] if edu_ids else None
+    ProjId = Literal[tuple(proj_ids)] if proj_ids else None
+
+    class Selection(BaseModel):
+        work_reasoning: str = Field(max_length=300)
+        work: list[WorkId] = Field(max_length=3)
+        activities_reasoning: str = Field(max_length=300)
+        activities: list[ActId] = Field(max_length=3)
+        education_reasoning: str = Field(max_length=300)
+        education: list[EduId] = Field(max_length=3)
+        projects_reasoning: str = Field(max_length=300)
+        projects: list[ProjId] = Field(max_length=3)
+
+    return Selection
 
 
 class ContactInfo(BaseModel):
@@ -19,6 +39,12 @@ class SkillCategory(BaseModel):
     )
     skills: list[str] = Field(
         description="List of skills , languages with proficiency, specific technologies, frameworks, or libraries in this category"
+    )
+
+
+class SkillsResult(BaseModel):
+    categories: list[SkillCategory] = Field(
+        description="Skills grouped by category, matched between the candidate profile and the job offer. Return an empty list if none match."
     )
 
 
@@ -103,7 +129,7 @@ class CandidateProfile(BaseModel):
     summary: str = Field(
         description="A compelling 2-3 sentence executive summary tailored strictly to the target job description"
     )
-    categorized_skills: list[SkillCategory] = Field(
+    categorized_skills: SkillsResult = Field(
         description="Technical skills grouped into logical categories"
     )
     work_experience: list[WorkExperience] = Field(
