@@ -46,6 +46,9 @@ class SkillsResult(BaseModel):
     categories: list[SkillCategory] = Field(
         description="Skills grouped by category, matched between the candidate profile and the job offer. Return an empty list if none match."
     )
+    explanation: str = Field(
+        description="Explanation of choosen skills."
+    )
 
 
 class Education(BaseModel):
@@ -98,7 +101,7 @@ class Activity(BaseModel):
     start_date: str = Field(
         description="Participation start date., '01/2023' or 'Jan 2023'"
     )
-    end_date: str = Field(
+    end_date: str | None = Field(
         description="Participation end date, or 'Present' if participating ., '01/2023' or 'Jan 2023'"
     )
     responsibilities: list[str] = Field(
@@ -122,8 +125,6 @@ class Project(BaseModel):
 
 
 class CandidateProfile(BaseModel):
-    primary_role: str = Field(
-        description="Target professional title in English, e.g., 'Junior AI / Software Engineer'")
     contact_info: ContactInfo = Field(
         description="Candidate's contact details")
     summary: str = Field(
