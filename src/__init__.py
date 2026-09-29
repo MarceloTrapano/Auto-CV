@@ -11,3 +11,8 @@ from .structured_output import (
     SkillsResult as SkillsResult,
     build_selection_schema as build_selection_schema,
 )
+from .build_profile import build_profile as build_profile
+from .render import (
+    render_cv as render_cv,
+    TEMPLATE_DIR as TEMPLATE_DIR,
+)
