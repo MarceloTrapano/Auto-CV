@@ -1,50 +1,11 @@
 import argparse
+from pathlib import Path
 import os
+
 from langchain_ollama import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
-from typing import Literal
-from pydantic import BaseModel, Field
 
-from src import LLMAgent, JobSchemaParser, build_selection_schema
-
-
-job_mock = """Główne obowiązki (Czego się nauczysz i w czym będziesz nas wspierać):
-
-
-    Raportowanie zarządcze: Nauka tworzenia i przygotowywania miesięcznych raportów dla kadry zarządzającej. 
-    Zamknięcie miesiąca: Aktywne wsparcie zespołu w comiesięcznym procesie zamykania i raportowania wyników finansowych.
-    Kalkulacja i monitoring KPI: Obliczanie i śledzenie kluczowych wskaźników efektywności (KPI) dla obszaru usług finansowych.
-    Analiza danych i rekomendacje: Badanie odchyleń oraz ich przyczyn. Nauczysz się wyciągać wnioski na podstawie danych historycznych i proponować konkretne działania poprawiające wyniki.
-
-
-Główne wyzwania (Z czym będziesz się mierzyć):
-
-
-    Optymalizacja i automatyzacja raportowania: Zmierzysz się ze złożonością danych finansowych. Liczymy na Twoją ciekawość w poszukiwaniu nowych sposobów na poprawę efektywności oraz automatyzację procesu generowania raportów.
-    Praca z Big Data, SQL i AI: Zmierzysz się z różnorodnymi, wielkimi zbiorami danych. Wyzwaniem będzie nauka i wykorzystywanie zapytań SQL, statystyki oraz narzędzi opartych na sztucznej inteligencji (AI) do analizy, weryfikacji i obsługi tych danych.
-
-
-Profil kandydata, którego szukamy:
-
-
-    Status studenta lub wykształcenie wyższe (np. Ekonomia, Finanse i Rachunkowość, Matematyka, Metody Ilościowe, Big Data, Analiza Danych lub pokrewne).
-    Zmysł analityczny i krytyczne myślenie: Nastawienie na pracę z danymi (data-driven mindset).
-    Wybitna dbałość o szczegóły: Skrupulatność, dokładność oraz poczucie estetyki – kluczowe do tworzenia czytelnych i profesjonalnych raportów zarządczych.
-    Ciągły apetyt na usprawnienia: Proaktywność, ciekawość technologiczna i chęć automatyzowania powtarzalnych procesów.
-    Nowoczesny warsztat analityka: Chęć do nauki (lub już posiadana wiedza) z zakresu Big Data, analizy statystycznej oraz języka SQL.
-    Otwartość na AI: Gotowość do eksplorowania i codziennego wykorzystywania narzędzi sztucznej inteligencji (AI) wspomagających analitykę i raportowanie.
-    Podstawy finansów: Wiedza z zakresu planowania finansowego i controllingu.
-
-
-Ze swojej strony oferujemy:
-
-
-    Wiedzę ekspercką: Będziesz uczyć się od doświadczonych specjalistów, otrzymując wskazówki i wsparcie w rozwijaniu swoich umiejętności i wiedzy z zakresu finansów.
-    Zespół oparty na współpracy: Staniesz się częścią przyjaznego i wspierającego zespołu, w którym wysoko ceni się współpracę i dzielenie się wiedzą.
-    Dostęp do najnowocześniejszych systemów: Będziesz pracować z zaawansowanym oprogramowaniem i systemami, zdobywając cenną wiedzę techniczną.
-    Elastyczny czas pracy – dostosowany do Twojego codziennego harmonogramu zajęć
-    Nowoczesne środowisko pracy: Ciesz się naszymi wygodnymi i nowoczesnymi biurami, zaprojektowanymi tak, aby sprzyjać współpracy i kreatywności."""
-
+from src import LLMAgent, JobSchemaParser, build_selection_schema, SkillsResult, build_profile, render_cv
+from src.render import TEMPLATE_DIR
 
 PROMPT_FOLDER = os.path.abspath(os.path.join("src", "prompts"))
 
@@ -60,15 +21,27 @@ REWRITE_HUMAN_PROMPT_PATH = os.path.join(PROMPT_FOLDER, "rewrite_human.md")
 ABOUT_SYSTEM_PROMPT_PATH = os.path.join(PROMPT_FOLDER, "about_system.md")
 ABOUT_HUMAN_PROMPT_PATH = os.path.join(PROMPT_FOLDER, "about_human.md")
 
+DEFAULT_TEMPLATE = "cv.tex.j2"
+DEFAULT_OUT_DIR = str(TEMPLATE_DIR.parent / "build")
+
 
 def main():
-    parser = argparse.ArgumentParser(prog="AutoCV",
-                                     description="Generate CV from candidate profile based on job offer")
-    parser.add_argument("filename")
+    parser = argparse.ArgumentParser(
+        prog="AutoCV",
+        description="Generate CV from candidate profile based on job offer")
+    parser.add_argument("filename", help="Path to the candidate profile file")
+    parser.add_argument("job_offer", help="Path to the job offer .txt file")
+    parser.add_argument("--out-dir", type=str, default=DEFAULT_OUT_DIR,
+                        help=f"Output directory (default: {DEFAULT_OUT_DIR})")
+    parser.add_argument("--template", type=str, default=DEFAULT_TEMPLATE,
+                        help=f"Jinja template name (default: {DEFAULT_TEMPLATE})")
     args = parser.parse_args()
 
     with open(args.filename, "r", encoding="utf-8") as file:
         biography = file.read()
+
+    with open(args.job_offer, "r", encoding="utf-8") as file:
+        job_offer = file.read()
 
     llm = ChatOllama(
         model="qwen2.5:3b-instruct",  # qwen3:30b-a3b
@@ -82,7 +55,8 @@ def main():
         human_prompt_path=SKILL_HUMAN_PROMPT_PATH,
     )
 
-    skills_result = skill_extractor.invoke(profile=biography, job=job_mock)
+    skills_result = skill_extractor.invoke_with_schema(
+        SkillsResult, profile=biography, job=job_offer)
 
     activity_picker = LLMAgent(
         llm=llm,
@@ -101,7 +75,7 @@ def main():
     Selection = build_selection_schema(work_ids, act_ids, edu_ids, proj_ids)
 
     activity_result = activity_picker.invoke_with_schema(
-        Selection, profile=biography, job=job_mock)
+        Selection, profile=biography, job=job_offer)
 
     choosen_work = activity_result.work
     choosen_activities = activity_result.activities
@@ -121,15 +95,15 @@ def main():
 
     for work in choosen_work:
         work_descriptions[work] = ghost_writer.invoke(
-            block=parsed_profile["Work_experience"][work]["description"], job=job_mock).content
+            block=parsed_profile["Work_experience"][work]["description"], job=job_offer).content
         selected_facts += f"{work} ({parsed_profile['Work_experience'][work]['company']}): {work_descriptions[work]}\n\n"
     for activity in choosen_activities:
         activity_descriptions[activity] = ghost_writer.invoke(
-            block=parsed_profile["Activities"][activity]["description"], job=job_mock).content
+            block=parsed_profile["Activities"][activity]["description"], job=job_offer).content
         selected_facts += f"{activity} ({parsed_profile['Activities'][activity]['organization']}): {activity_descriptions[activity]}\n\n"
     for project in choosen_projects:
         project_descriptions[project] = ghost_writer.invoke(
-            block=parsed_profile["Projects"][project]["description"], job=job_mock).content
+            block=parsed_profile["Projects"][project]["description"], job=job_offer).content
         selected_facts += f"{project} ({parsed_profile['Projects'][project]['name']}): {project_descriptions[project]}\n\n"
 
     about_agent = LLMAgent(
@@ -139,18 +113,17 @@ def main():
     )
 
     about = about_agent.invoke(
-        job=job_mock, base_about=parsed_profile["About"], selected_facts=selected_facts, selected_skills=skills_result.content.split("Explanation (do not output it):")[0])
+        job=job_offer, base_about=parsed_profile["About"], selected_facts=selected_facts, selected_skills=skills_result.categories)
 
-    print(about.content)
-    print("#"*25)
-    print(choosen_education)
-    if work_descriptions:
-        print(work_descriptions)
-    if activity_descriptions:
-        print(activity_descriptions)
-    if project_descriptions:
-        print(project_descriptions)
-    print(skills_result.content)
+    profile = build_profile(about=about.content,
+                            education=choosen_education,
+                            work_experience=work_descriptions,
+                            projects=project_descriptions,
+                            activities=activity_descriptions,
+                            skills=skills_result,
+                            job_schema_parser_result=parsed_profile)
+
+    render_cv(profile, out_dir=Path(args.out_dir), template=args.template)
 
 
 if __name__ == "__main__":
