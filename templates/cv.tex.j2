@@ -1,0 +1,183 @@
+%-----------------------------------------------------------------------------------------------------------------------------------------------%
+%	The MIT License (MIT)
+%
+%	Copyright (c) 2021 Jitin Nair
+%
+%	Permission is hereby granted, free of charge, to any person obtaining a copy
+%	of this software and associated documentation files (the "Software"), to deal
+%	in the Software without restriction, including without limitation the rights
+%	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%	copies of the Software, and to permit persons to whom the Software is
+%	furnished to do so, subject to the following conditions:
+%	
+%	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%	THE SOFTWARE.
+%-----------------------------------------------------------------------------------------------------------------------------------------------%
+
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{url}
+\usepackage{parskip}
+
+\RequirePackage{color}
+\RequirePackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[scale=0.9]{geometry}
+
+\usepackage{tabularx}
+\usepackage{enumitem}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+
+\usepackage{supertabular}
+\newlength{\fullcollw}
+\setlength{\fullcollw}{0.47\textwidth}
+
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{multirow}
+
+\titleformat{\section}{\Large\scshape\raggedright}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{0pt}{5pt}
+
+\usepackage[unicode, draft=false]{hyperref}
+\definecolor{linkcolour}{rgb}{0,0.2,0.6}
+\hypersetup{colorlinks,breaklinks,urlcolor=linkcolour,linkcolor=linkcolour}
+
+\usepackage{fontawesome5}
+\usepackage{polski}
+
+\newenvironment{jobshort}[2]
+    {
+    \begin{tabularx}{\linewidth}{@{}l X r@{}}
+    \textbf{#1} & \hfill &  #2 \\[3.75pt]
+    \end{tabularx}
+    }
+    {
+    }
+
+\newenvironment{joblong}[2]
+    {
+    \begin{tabularx}{\linewidth}{@{}l X r@{}}
+    \textbf{#1} & \hfill &  #2 \\[3.75pt]
+    \end{tabularx}
+    \begin{minipage}[t]{\linewidth}
+    \begin{itemize}[nosep,after=\strut, leftmargin=1em, itemsep=3pt,label=--]
+    }
+    {
+    \end{itemize}
+    \end{minipage}
+    }
+
+((= One entry: joblong with bullets, or jobshort when there are no bullets.
+    Arguments are raw (unescaped) - the macro escapes them. =))
+((* macro job(title, right, items, link=none) *))
+((* set lines = items|bullets *))
+((* set name *))((* if link *))\href{(((link|url_arg)))}{(((title|tex)))}((* else *))(((title|tex)))((* endif *))((* endset *))
+((* if lines *))
+\begin{joblong}{(((name)))}{(((right|tex)))}
+((* for line in lines *))
+\item (((line|tex)))
+((* endfor *))
+\end{joblong}
+((* else *))
+\begin{jobshort}{(((name)))}{(((right|tex)))}
+\end{jobshort}
+((* endif *))
+((* endmacro *))
+
+\begin{document}
+
+\pagestyle{empty}
+
+%----------------------------------------------------------------------------------------
+%	TITLE
+%----------------------------------------------------------------------------------------
+
+\begin{tabularx}{\linewidth}{@{} C @{}}
+\Huge{(((p.contact_info.full_name|tex)))} \\[7.5pt]
+((* for c in contacts *))\href{(((c.url|url_arg)))}{\raisebox{-0.05\height}(((c.icon)))\ (((c.label|tex)))}((* if not loop.last *)) \ $|$ \ ((* endif *))((* endfor *)) \\
+\end{tabularx}
+
+%----------------------------------------------------------------------------------------
+%	ABOUT
+%----------------------------------------------------------------------------------------
+((* if p.summary *))
+\section{About}
+((* for para in p.summary|paras *))
+(((para|tex)))
+
+((* endfor *))
+((* endif *))
+%----------------------------------------------------------------------------------------
+%	EDUCATION
+%----------------------------------------------------------------------------------------
+((* if p.education *))
+\section{Education}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+((* for e in p.education *))
+(((e.start_date|year))) - (((e.end_date|year))) & (((e.degree|tex))) at \textbf{(((e.school_name|tex)))} ((* if e.course *))\\
+& (((e.course|tex)))((* endif *)) \\[3pt]
+((* endfor *))
+\end{tabularx}
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	WORK EXPERIENCE
+%----------------------------------------------------------------------------------------
+((* if p.work_experience *))
+\section{Work Experience}
+((* for w in p.work_experience *))
+(((job(w.company_name ~ " - " ~ w.position,
+       (w.start_date|mon_year) ~ " - " ~ (w.end_date|mon_year),
+       w.responsibilities))))
+
+((* endfor *))
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	PROJECTS
+%----------------------------------------------------------------------------------------
+((* if p.projects *))
+\section{Projects}
+((* for pr in p.projects *))
+(((job(pr.project_name,
+       pr.technologies|map("trim")|join(", "),
+       pr.project_description,
+       link=pr.link_to_repo))))
+
+((* endfor *))
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	ACTIVITIES
+%----------------------------------------------------------------------------------------
+((* if p.activities *))
+\section{Activities}
+((* for a in p.activities *))
+(((job(a.organization ~ ((" - " ~ a.role) if a.role else ""),
+       (a.start_date|mon_year) ~ " - " ~ (a.end_date|mon_year),
+       a.responsibilities))))
+
+((* endfor *))
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	SKILLS
+%----------------------------------------------------------------------------------------
+((* if p.categorized_skills.categories *))
+\section{Skills}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+((* for c in p.categorized_skills.categories *))
+\textbf{(((c.category_name|tex)))} & (((c.skills|map("trim")|join(", ")|tex))) \\
+((* endfor *))
+\end{tabularx}
+((* endif *))
+
+\vfill
+
+\end{document}
