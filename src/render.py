@@ -108,7 +108,7 @@ def render_cv(profile, out_dir: str | Path = Path(__file__).parent.parent / "bui
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     tex_path = out / \
-        f"{profile.contact_info.full_name.split(" ")[0]}_{profile.contact_info.full_name.split(" ")[-1]}_cv.tex"
+        f"{profile.contact_info.full_name.split(' ')[0]}_{profile.contact_info.full_name.split(' ')[-1]}_cv.tex"
     tex_path.write_text(render_tex(
         profile, template=template), encoding="utf-8")
     if not compile_pdf:
