@@ -146,7 +146,7 @@
 \section{Projects}
 ((* for pr in p.projects *))
 (((job(pr.project_name,
-       pr.technologies|map("trim")|join(", "),
+       " ",
        pr.project_description,
        link=pr.link_to_repo))))
 
@@ -159,7 +159,7 @@
 ((* if p.activities *))
 \section{Activities}
 ((* for a in p.activities *))
-(((job(a.organization ~ ((" - " ~ a.role) if a.role else ""),
+(((job(a.organization,
        (a.start_date|mon_year) ~ " - " ~ (a.end_date|mon_year),
        a.responsibilities))))
 

@@ -1,4 +1,7 @@
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class JobSchemaParser:
@@ -15,6 +18,7 @@ class JobSchemaParser:
         self.HOBBIES = "Hobbies\n"
 
     def set_filename(self, filename: str):
+        logger.info(f"Set filename to {filename}")
         self.filename = filename
 
     def _parse_keys(self, section, keys, sep: str = "\n"):
@@ -54,9 +58,11 @@ class JobSchemaParser:
         result["Work_experience"] = {}
         for section in sections:
             if section.startswith(self.ABOUT):
+                logger.debug("Parsing about section.")
                 result["About"] = section.split(
                     "---")[0].split(self.ABOUT)[1]
             elif section.startswith(self.PERSON):
+                logger.debug("Parsing person information.")
                 result["Person"] = self._parse_keys(section, keys=[
                     "name:",
                     "email:",
@@ -65,6 +71,7 @@ class JobSchemaParser:
                     "linkedin:"
                 ])
             elif section.startswith(self.EDUCATION):
+                logger.debug("Parsing education section.")
                 result["Education"][self._parse_title(
                     section)] = self._parse_keys(section, keys=[
                         "school:",
@@ -75,6 +82,7 @@ class JobSchemaParser:
                         "description:",
                     ])
             elif section.startswith(self.WORK_EXPERIENCE):
+                logger.debug("Parsing work section.")
                 result["Work_experience"][self._parse_title(
                     section)] = self._parse_keys(section, keys=[
                         "company:",
@@ -84,6 +92,7 @@ class JobSchemaParser:
                         "description:",
                     ])
             elif section.startswith(self.PROJECTS):
+                logger.debug("Parsing project section.")
                 result["Projects"][self._parse_title(
                     section)] = self._parse_keys(section, keys=[
                         "name:",
@@ -92,6 +101,7 @@ class JobSchemaParser:
                         "description:",
                     ])
             elif section.startswith(self.ACTIVITIES):
+                logger.debug("Parsing activities section.")
                 result["Activities"][self._parse_title(
                     section)] = self._parse_keys(section, keys=[
                         "organization:",
@@ -101,13 +111,16 @@ class JobSchemaParser:
                         "description:"
                     ])
             elif section.startswith(self.SKILLS):
+                logger.debug("Parsing skills.")
                 result["Skills"] = section.split(
                     "---")[0].split(self.SKILLS)[1]
             elif section.startswith(self.HOBBIES):
+                logger.debug("Parsing hobbies.")
                 result["Hobbies"] = section.split(
                     "---")[0].split(self.HOBBIES)[1]
             else:
                 raise ValueError(f"Cannot parse this section: {section}")
+        logger.info("Schema has been parsed.")
         return result
 
 

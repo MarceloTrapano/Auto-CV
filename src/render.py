@@ -33,12 +33,14 @@ def paras(text: str) -> list[str]:
     return [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
 
 
-def bullets(items) -> list[str]:
+def bullets(items=None):
     """Str (lines) or list -> clean list of items without '-' and 'None'."""
+    if items is None:
+        items = []
     if isinstance(items, str):
         items = items.splitlines()
     out = []
-    for item in items or []:
+    for item in items:
         s = re.sub(r"^\s*[-•*–]\s*", "", str(item)).strip()
         if s and s.lower() != "none":
             out.append(s)

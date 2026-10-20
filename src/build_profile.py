@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from .structured_output import (
     ContactInfo as ContactInfo,
@@ -9,6 +10,8 @@ from .structured_output import (
     CandidateProfile as CandidateProfile,
     SkillsResult as SkillsResult,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def build_profile(about: str,
@@ -27,12 +30,14 @@ def build_profile(about: str,
     else:
         linkedin_url = None
 
+    logger.debug("Building contact info")
     contact_info = ContactInfo(full_name=person_info.get("name", ""),
                                email=person_info.get("email", None),
                                phone=person_info.get("phone", None),
                                github=person_info.get("github", None),
                                linkedin=linkedin_url)
 
+    logger.debug("Building education")
     education_info = job_schema_parser_result["Education"]
     education_list = []
 
@@ -50,10 +55,12 @@ def build_profile(about: str,
                                      )
         education_list.append(parsed_education)
 
+    logger.debug("Building work experience")
     work_experience_info = job_schema_parser_result["Work_experience"]
     work_experience_list = []
 
     for key, item in work_experience.items():
+        print(item)
         parsed_work_experience = WorkExperience(company_name=work_experience_info[key].get("company", ""),
                                                 position=work_experience_info[key].get(
                                                     "position", ""),
@@ -62,10 +69,11 @@ def build_profile(about: str,
                                                 end_date=work_experience_info[key].get(
                                                     "end", None),
                                                 responsibilities=item.split(
-                                                    "- ")[1:],
+                                                    "- ")[1:] if item is not None else [""],
                                                 )
         work_experience_list.append(parsed_work_experience)
 
+    logger.debug("Building projects")
     projects_info = job_schema_parser_result["Projects"]
     projects_list = []
 
@@ -79,6 +87,7 @@ def build_profile(about: str,
                                   )
         projects_list.append(parsed_projects)
 
+    logger.debug("Building activities")
     activities_info = job_schema_parser_result["Activities"]
     activities_list = []
 
@@ -92,6 +101,7 @@ def build_profile(about: str,
                                      responsibilities=item.split("- ")[1:],
                                      )
         activities_list.append(parsed_activities)
+    logger.info("Profile has been built")
 
     return CandidateProfile(contact_info=contact_info,
                             summary=about,
