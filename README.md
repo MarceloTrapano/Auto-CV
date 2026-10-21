@@ -74,20 +74,20 @@ ollama pull qwen2.5:3b-instruct
 Prepare your biography file and save the job offer as a `.txt` file, then run:
 
 ```bash
-uv run main.py job_schema.md job_offer.txt
+uv run main.py job_schema.md job_offer_url
 ```
 
 You can also customize the output directory and the template:
 
 ```bash
-uv run main.py job_schema.md job_offer.txt --out-dir build --template cv.tex.j2
+uv run main.py job_schema.md job_offer_url --out-dir build --template cv.tex.j2
 ```
 
 #### 📋 CLI Arguments:
 
 - `filename` : Path to the candidate profile (biography) file (required)
 
-- `job_offer` : Path to the job offer `.txt` file (required)
+- `job_offer_url` : Url to job offer (required, supported sites: Linkedin, NoFluffJobs, Pracuj)
 
 - `--out-dir` : Output directory for the generated CV (default: `build`)
 
