@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoCV</title>
+<style>
+:root{--desktop:#d7d2c4;--panel:#f6f3e9;--paper:#fff;--ink:#172334;--muted:#5c6570;--line:#9babc1;--blue:#1769bd;--blue-dark:#06418c;--blue-deep:#003477;--orange:#ee8124;--orange-dark:#a94b08;--orange-pale:#fff0df;--green:#247a36;--red:#b3261e;--field:#fff}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{font:12px/1.5 Tahoma,Verdana,"Segoe UI",sans-serif;background:linear-gradient(135deg,#e6e1d5,#c7c3b7);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+header{flex:none;display:flex;align-items:center;gap:14px;padding:9px 13px;color:#fff;margin:10px 10px 0;border:1px solid #00316e;border-bottom:2px solid #f7f9ff;border-radius:8px 8px 0 0;text-shadow:1px 1px 1px #003a7c;background:linear-gradient(180deg,#78baff 0%,#3987e3 18%,#1261bd 58%,#064293 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 1px 3px #999}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:32px;height:32px;display:grid;place-items:center;border:1px solid #ffe3c3;border-radius:5px;background:linear-gradient(145deg,#ffbf71,#ef8124 62%,#b34e08);font-size:17px;font-weight:bold;color:#fff;box-shadow:inset 0 1px 2px #fff7,1px 2px 3px #003a7c}
+.brand-copy{min-width:0}.brand-copy h1{font-size:16px;margin:0;line-height:1.25;font-weight:bold;letter-spacing:.01em}.brand-copy p{font-size:10px;margin:2px 0 0;color:#e4f1ff;letter-spacing:.03em}
+.header-spacer{flex:1}
+button,.btn{font:11px Tahoma,Verdana,sans-serif;padding:5px 11px;border:1px solid #72849a;border-radius:3px;background:linear-gradient(180deg,#fff,#f5f1e7 82%,#ded8c9);color:#172334;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:inset 0 1px 0 #fff;white-space:nowrap}
+button:hover,.btn:hover{background:linear-gradient(180deg,#fff,#fff0df 65%,#ffd5a9);border-color:var(--orange-dark)}
+button:active,.btn:active{box-shadow:inset 0 1px 3px #b4a996;background:#e8e2d6}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+button.primary{border-color:#9d4908;color:#fff;font-weight:bold;text-shadow:1px 1px 1px #873900;background:linear-gradient(180deg,#ffd39c,#f28a2f 43%,#d96113 100%);box-shadow:inset 0 1px 0 #ffe9d2,0 1px 1px #003a7c;padding:7px 15px;font-size:12px}
+button.primary:hover{background:linear-gradient(180deg,#ffe2ba,#ff9d4d 43%,#e56d19)}
+button:disabled{color:#9297a0;background:linear-gradient(#f7f6f2,#e6e4dd);border-color:#c9c7c0;cursor:default;box-shadow:none;text-shadow:none}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(430px,1.04fr) minmax(340px,.96fr);margin:0 10px;background:var(--paper);border:1px solid #7c94b1;border-top:0;box-shadow:0 3px 12px #726e6455;overflow:hidden}
+#work,#preview{min-height:0;min-width:0;display:flex;flex-direction:column;background:#fff}
+#work{display:grid;grid-template-columns:130px minmax(0,1fr);border-right:1px solid #a6b2c2}
+#tabs{display:flex;flex-direction:column;gap:3px;padding:10px 7px;background:linear-gradient(180deg,#f8f6ef,#e8e4d7);border-right:1px solid #b9b4a8;min-height:0;overflow-y:auto}
+#tabs button{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:7px;width:100%;white-space:normal;text-align:left;padding:8px 7px;border:1px solid transparent;border-radius:4px;background:transparent;box-shadow:none;color:#364253;font-size:11px}
+#tabs button::before{content:"";width:7px;height:7px;flex:none;border:1px solid #a5a5a0;border-radius:2px;background:linear-gradient(#fff,#d8d8d3)}
+#tabs button:hover:not(:disabled){border-color:#e9ad78;background:linear-gradient(90deg,#fff8f0,#ffe7cc)}
+#tabs button[aria-selected=true]{color:#743400;font-weight:bold;border-color:#e7a56a;background:linear-gradient(90deg,#fff0df,#ffe0b9);box-shadow:inset 3px 0 0 var(--orange)}
+#tabs button[aria-selected=true]::before{border-color:var(--orange-dark);background:var(--orange)}
+#tabs button:disabled{color:#a8a8a2;background:transparent}
+#tabs button:disabled::before{opacity:.4}
+.tab-host{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
+.tab{display:none;flex:1;min-height:0;overflow:auto;padding:15px 17px 30px;background:#fff}
+.tab.on{display:block}
+label{display:block;font-size:11px;color:#4e5a68;margin:10px 0 0;font-weight:normal}
+input,textarea,select{display:block;width:100%;font:12px Tahoma,Verdana,sans-serif;color:#111;background:var(--field);border:1px solid #8aa6c5;border-radius:1px;padding:6px 7px;margin-top:4px;box-shadow:inset 1px 1px 2px #0000000c}
+input:focus,textarea:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 1px #ffc185}
+input[type=file]{padding:5px;background:#fff}
+textarea{resize:vertical;line-height:1.45}
+h3{margin:21px 0 7px;font-size:13px;color:#164a83;border-bottom:1px solid #b8c6d8;padding:0 0 5px;display:flex;align-items:center;gap:7px}
+h3::before{content:"";display:inline-block;width:4px;height:14px;background:var(--orange);border-radius:1px}
+h3:first-child{margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.grid label:has(textarea){grid-column:1/-1}
+fieldset{border:1px solid #b8c5d7;border-radius:4px;margin:12px 0;padding:7px 11px 12px;position:relative;background:linear-gradient(180deg,#fff,#fbfcfe)}
+legend{font-size:11px;color:#24496f;padding:0 6px;font-weight:bold}
+.x{position:absolute;top:-12px;right:8px;padding:2px 8px;font-size:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}.hint{font-size:10px;color:var(--muted);margin:6px 0}.empty{color:#7b8694;padding:22px 0}
+details{border:1px solid #c6ced8;border-radius:3px;background:#f7f8fa;margin:6px 0;padding:3px 8px}summary{cursor:pointer;font-size:11px;font-weight:bold;color:#254e7a;padding:3px 0}summary:hover{color:var(--orange-dark)}details[open]{background:#fff;border-color:#e5b184}details pre{margin:5px 0 7px;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.5 Tahoma,Verdana,sans-serif;color:#333}
+.filelabel{display:block;min-width:180px;flex:1}#modelmsg{min-height:1em;overflow-wrap:anywhere}.fit-summary{margin:0 0 14px;padding:7px 10px;background:#fff8ef;border:1px solid #e9a565;border-top:3px solid var(--orange)}.fit-summary summary{color:#743400;font-size:12px}.fit-summary pre{max-height:unset;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0;font:12px/1.5 Tahoma,Verdana,sans-serif;color:#222}.fit-score{display:inline-block;padding:2px 8px;margin:4px 0;border:1px solid var(--orange-dark);background:#ffe1bd;font-weight:bold;border-radius:2px}
+.markdown-body{font-size:12px;line-height:1.55;color:#222;overflow-wrap:anywhere;word-break:normal}
+.markdown-body>*:first-child{margin-top:0!important}
+.markdown-body>*:last-child{margin-bottom:0!important}
+.markdown-body p{margin:7px 0}
+.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{display:block;color:#164a83;line-height:1.3;border-bottom:1px solid #e0c2a5;padding:0 0 4px;margin:12px 0 6px}
+.markdown-body h1{font-size:16px}.markdown-body h2{font-size:14px}.markdown-body h3{font-size:13px}.markdown-body h4,.markdown-body h5,.markdown-body h6{font-size:12px}
+.markdown-body ul,.markdown-body ol{padding-left:23px;margin:6px 0}.markdown-body li{margin:3px 0;padding-left:2px}
+.markdown-body blockquote{margin:7px 0;padding:5px 10px;border-left:3px solid var(--orange);background:#fff4e8;color:#454545}
+.markdown-body code{font:11px/1.45 "Courier New",monospace;background:#f0f2f5;border:1px solid #d9dee5;border-radius:2px;padding:1px 4px}
+.markdown-body pre{margin:7px 0;padding:8px;background:#f3f5f8;border:1px solid #d8dee8;white-space:pre-wrap;overflow:auto;font:11px/1.45 "Courier New",monospace}
+.markdown-body pre code{padding:0;border:0;background:transparent}
+.markdown-body a{color:#075da8;text-decoration:underline;overflow-wrap:anywhere}
+.markdown-body hr{border:0;border-top:1px solid #d8c1a9;margin:10px 0}
+.markdown-body table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px;display:block;overflow-x:auto}
+.markdown-body th,.markdown-body td{border:1px solid #c7d1df;padding:5px 7px;text-align:left;vertical-align:top}
+.markdown-body th{background:#eaf2fc;color:#163f6a}.markdown-body tr:nth-child(even) td{background:#fafbfd}
+.fit-summary .markdown-body{margin-top:7px}.stage details .markdown-body{grid-column:2;max-height:min(55vh,520px);overflow:auto;overscroll-behavior:contain;padding:4px 8px 8px 0;scrollbar-gutter:stable}
+
+.stage{display:grid;grid-template-columns:22px minmax(0,1fr);gap:3px 8px;padding:9px 1px;border-bottom:1px solid #e3e6ea}.mark{font-family:Tahoma;text-align:center;color:#a5abb3}.stage.done .mark{color:var(--green);font-weight:bold}.stage.error .mark,.stage.error b{color:var(--red)}.stage b{color:#233d5b}.stage pre{grid-column:2;margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.45 Tahoma,Verdana,sans-serif;color:var(--muted);max-height:5em;overflow:hidden}.stage details{grid-column:2;min-width:0;max-width:100%}.stage details pre{max-height:min(55vh,520px);overflow:auto;overscroll-behavior:contain;padding-right:8px; scrollbar-gutter:stable}.stage .stage-summary{grid-column:2;margin:2px 0;color:var(--muted);overflow-wrap:anywhere}
+.spin{width:13px;height:13px;border-radius:50%;border:2px solid #efc8a7;border-top-color:var(--orange-dark);display:inline-block;animation:rot .7s linear infinite;vertical-align:-3px}@keyframes rot{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+#tex{font:12px/1.5 "Courier New",monospace;min-height:70vh;white-space:pre;tab-size:2}.pbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 11px;border-bottom:1px solid #9ab2d1;background:linear-gradient(180deg,#e9f3ff,#c8def8);font-size:11px;min-height:43px}.preview-title{display:flex;align-items:center;gap:8px;color:#164b86}.preview-icon{display:grid;place-items:center;background:#fff;border:1px solid #a4b9d1;border-radius:2px;width:25px;height:26px;font-size:9px;font-weight:bold;color:var(--orange-dark)}.preview-actions{display:flex;gap:6px;align-items:center}#pdf{flex:1;min-height:0;width:100%;border:0;background:linear-gradient(135deg,#f6f7f9,#e3e8ef)}#err{margin:0;max-height:35%;overflow:auto;padding:8px 12px;background:#fff2f0;color:var(--red);font:11px/1.4 "Courier New",monospace;white-space:pre-wrap;border-top:1px solid #e3b1ac}
+#statusbar{flex:none;display:flex;align-items:center;gap:8px;margin:0 10px 9px;padding:5px 10px;min-height:27px;background:linear-gradient(#faf9f5,#e2dfd4);border:1px solid #adb4bc;border-top:1px solid #fff;color:#536071;font-size:10px;box-shadow:0 1px 2px #9995}#statusicon{width:10px;height:10px;border:1px solid #a4a9ae;background:#e7e5db;border-radius:50%;flex:none}#statusicon.busy{border:2px solid #f1bf91;border-top-color:var(--orange-dark);background:#fff;animation:rot .7s linear infinite}#statusicon.ok{border-color:#47945b;background:#6fc17b}#statusicon.err{border-color:#b3261e;background:#e77b71}.status-spacer{flex:1}.status-right{color:#8b8b83}
+/* Actual PDF preview for the selected LaTeX template, available before generation. */
+.template-preview-row{margin-top:7px;align-items:center}.template-preview-row .hint{flex:1;min-width:120px;margin:0}.template-preview-row button{flex:none}
+.modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(9,28,55,.66)}
+.template-modal{width:min(1040px,97vw);height:min(900px,92vh);display:flex;flex-direction:column;min-width:0;background:#f7f5ed;border:1px solid #164b86;border-radius:6px;overflow:hidden;box-shadow:0 18px 55px #0008}
+.template-modal-head{display:flex;align-items:center;gap:10px;padding:8px 11px;color:#fff;background:linear-gradient(180deg,#76b6ff,#1769bd 55%,#06418c);border-bottom:2px solid #ee8124}.template-modal-head strong{overflow-wrap:anywhere}.template-modal-head .status-spacer{flex:1}
+.template-modal-status{padding:7px 11px;margin:0;background:#fff8ef;border-bottom:1px solid #e4b184;color:#633a1b;font-size:11px}
+#template-preview-pdf{display:block;flex:1;min-height:0;width:100%;border:0;background:#e7eaf0}
+@media(max-width:920px){body{overflow:auto}main{grid-template-columns:1fr;grid-template-rows:minmax(520px,65vh) minmax(420px,60vh);overflow:visible}#work{border-right:0;border-bottom:1px solid #9aa9bb}#work{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}#tabs{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid #b9b4a8;padding:5px;gap:4px}#tabs button{width:auto;min-width:max-content;padding:6px 9px}#tabs button[aria-selected=true]{box-shadow:inset 0 -3px 0 var(--orange)}#tabs button::before{display:none}header{margin:6px 6px 0}main{margin:0 6px}#statusbar{margin:0 6px 6px}}
+@media(max-width:560px){.brand-copy p{display:none}.brand-copy h1{font-size:14px}.brand-mark{width:28px;height:28px}header{gap:7px;padding:7px}.header-generate{padding:6px 8px;font-size:10px}.tab{padding:11px 10px 24px}.grid{grid-template-columns:1fr}.grid label:has(textarea){grid-column:auto}.pbar{gap:5px;padding:6px}.preview-title strong{font-size:10px}.preview-actions button,.preview-actions .btn{font-size:10px;padding:4px 6px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">A</span><div class="brand-copy"><h1>AutoCV</h1></div></div>
+  <span class="header-spacer"></span>
+  <button id="gen" class="primary header-generate"><span aria-hidden="true">✦</span> Generate CV</button>
+</header>
+<main>
+<section id="work">
+  <nav id="tabs" role="tablist" aria-label="Workspace sections">
+    <button role="tab" data-tab="settings" aria-selected="true">Settings</button>
+    <button role="tab" data-tab="schema">Source profile</button>
+    <button role="tab" data-tab="progress" disabled>Progress</button>
+    <button role="tab" data-tab="edit" disabled>Edit CV</button>
+    <button role="tab" data-tab="latex" disabled>LaTeX source</button>
+  </nav>
+  <div class="tab-host">
+
+  <div class="tab on" id="t-settings">
+    <label>Model source
+      <select id="provider">
+        <option value="gemini">API — Google Gemini</option>
+        <option value="openai">API — OpenAI</option>
+        <option value="anthropic">API — Anthropic (Claude)</option>
+        <option value="openai_compatible">API — OpenAI-compatible (OpenRouter, vLLM, etc.)</option>
+        <option value="ollama">Local — Ollama</option>
+      </select>
+    </label>
+    <label>Model <select id="model"></select></label>
+    <div class="row" style="margin-top:6px"><button id="refresh-models">Refresh available models</button><span class="hint" id="modelmsg" aria-live="polite"></span></div>
+    <label>Custom model ID (optional) <input id="custommodel" placeholder="Use this to enter a model not listed above"></label>
+    <div id="keybox">
+      <label>API key <input id="apikey" type="password" autocomplete="off" placeholder="Leave blank to use a server-side key"></label>
+      <p class="hint">API keys are sent to the backend for requests and are not saved in browser storage.</p>
+    </div>
+    <div id="oaibase" hidden>
+      <label>API base URL (optional) <input id="oabase" placeholder="https://api.openai.com/v1"></label>
+    </div>
+    <div id="oll" hidden>
+      <div class="grid">
+        <label>Ollama address <input id="baseurl" placeholder="http://localhost:11434"></label>
+        <label>Context (num_ctx) <input id="numctx" type="number" value="8192"></label>
+      </div>
+    </div>
+    <h3>Job offer</h3>
+    <label>Offer link (LinkedIn, NoFluffJobs, Pracuj.pl) <input id="url" type="url" placeholder="https://"></label>
+    <label>LaTeX template <select id="template"></select></label>
+    <div class="row template-preview-row">
+      <button id="preview-template" type="button">Preview selected template</button>
+      <span class="hint">Opens a sample PDF using this exact template. No AI generation is needed.</span>
+    </div>
+  </div>
+
+  <div class="tab" id="t-schema">
+    <div class="row" style="margin-top:0">
+      <label class="filelabel">Import profile (.md or .txt)
+        <input id="file" type="file" accept=".md,.txt" title="Choose a profile file to import">
+      </label>
+      <button id="save">Download .md</button>
+      <button id="reset">Clear</button>
+    </div>
+    <p class="hint">Changes are saved automatically in this browser. Dates in MM/YYYY format.</p>
+    <div class="form"></div>
+  </div>
+
+  <div class="tab" id="t-progress"><div id="stages"></div></div>
+
+  <div class="tab" id="t-edit">
+    <div id="fit-summary" hidden></div>
+    <div class="form"><p class="empty">Generate a CV first to edit it here. Every change refreshes the PDF preview.</p></div>
+  </div>
+
+  <div class="tab" id="t-latex">
+    <p class="hint">Edit the LaTeX source directly. Changes are compiled into the PDF preview.</p>
+    <textarea id="tex" spellcheck="false"></textarea>
+  </div>
+  </div>
+</section>
+
+<section id="preview">
+  <div class="pbar"><div class="preview-title"><span class="preview-icon">PDF</span><strong>Document preview</strong></div><div class="preview-actions"><a id="dlpdf" class="btn" hidden download="cv.pdf">Download PDF</a><button id="dltex" hidden>Download .tex</button></div></div>
+  <iframe id="pdf" title="CV preview"></iframe>
+  <pre id="err" hidden></pre>
+</section>
+</main>
+<div id="template-modal" class="modal-backdrop" hidden>
+  <section class="template-modal" role="dialog" aria-modal="true" aria-labelledby="template-preview-title">
+    <div class="template-modal-head">
+      <span class="preview-icon">PDF</span>
+      <strong id="template-preview-title">Template preview</strong>
+      <span class="status-spacer"></span>
+      <button id="close-template-preview" type="button">Close preview</button>
+    </div>
+    <p id="template-preview-status" class="template-modal-status">Sample content only. This preview demonstrates the selected LaTeX template's layout.</p>
+    <iframe id="template-preview-pdf" title="Selected template sample PDF preview" src="about:blank"></iframe>
+  </section>
+</div>
+<footer id="statusbar" role="status" aria-live="polite"><span id="statusicon"></span><span id="status">Ready</span><span class="status-spacer"></span><span class="status-right">AutoCV</span></footer>
+
+<script>
+const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* Safe, dependency-free Markdown rendering for AI assessment output.
+   Raw HTML is escaped; only HTTP(S) Markdown links are made clickable. */
+function markdownInline(source){
+  let text=esc(source);
+  const saved=[];
+  const stash=html=>{const token=`\u0000MD${saved.length}\u0000`;saved.push(html);return token};
+  text=text.replace(/`([^`]+)`/g,(_,code)=>stash(`<code>${code}</code>`));
+  text=text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)(?:\s+"([^"]*)")?\)/gi,(_,label,url,title)=>{
+    const safeTitle=title?` title="${title}"`:"";
+    return stash(`<a href="${url}"${safeTitle} target="_blank" rel="noopener noreferrer">${label}</a>`);
+  });
+  text=text.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/__(.+?)__/g,"<strong>$1</strong>");
+  text=text.replace(/~~(.+?)~~/g,"<del>$1</del>");
+  text=text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g,"$1<em>$2</em>").replace(/(^|[^_])_([^_\n]+)_(?!_)/g,"$1<em>$2</em>");
+  return text.replace(/\u0000MD(\d+)\u0000/g,(_,i)=>saved[Number(i)]||"");
+}
+function renderMarkdown(source){
+  const lines=String(source??"").replace(/\r\n?/g,"\n").split("\n");
+  const out=[];let paragraph=[],listType="",quote=[];
+  const flushParagraph=()=>{if(paragraph.length){out.push(`<p>${markdownInline(paragraph.join(" "))}</p>`);paragraph=[]}};
+  const closeList=()=>{if(listType){out.push(`</${listType}>`);listType=""}};
+  const flushQuote=()=>{if(quote.length){out.push(`<blockquote>${quote.map(line=>`<p>${markdownInline(line)}</p>`).join("")}</blockquote>`);quote=[]}};
+  const flushAll=()=>{flushParagraph();closeList();flushQuote()};
+  const cells=line=>{let s=line.trim();if(s.startsWith("|"))s=s.slice(1);if(s.endsWith("|"))s=s.slice(0,-1);return s.split("|").map(x=>x.trim())};
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(!line.trim()){flushAll();continue}
+    const heading=line.match(/^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if(heading){flushAll();const level=heading[1].length;out.push(`<h${level}>${markdownInline(heading[2])}</h${level}>`);continue}
+    if(/^\s{0,3}((\*\s*){3,}|(-\s*){3,}|(_\s*){3,})$/.test(line)){flushAll();out.push("<hr>");continue}
+    const quoteMatch=line.match(/^\s{0,3}>\s?(.*)$/);
+    if(quoteMatch){flushParagraph();closeList();quote.push(quoteMatch[1]);continue}else flushQuote();
+    const item=line.match(/^\s{0,3}([-+*]|\d+[.)])\s+(.+)$/);
+    if(item){flushParagraph();const wanted=/^\d/.test(item[1])?"ol":"ul";if(listType!==wanted){closeList();out.push(`<${wanted}>`);listType=wanted}out.push(`<li>${markdownInline(item[2])}</li>`);continue}else closeList();
+    if(i+1<lines.length && line.includes("|") && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(lines[i+1])){
+      flushParagraph();flushQuote();closeList();
+      const headers=cells(line), rows=[];i+=2;
+      while(i<lines.length && lines[i].trim() && lines[i].includes("|")){rows.push(cells(lines[i]));i++}
+      i--;
+      const th=headers.map(c=>`<th>${markdownInline(c)}</th>`).join("");
+      const trs=rows.map(row=>`<tr>${headers.map((_,j)=>`<td>${markdownInline(row[j]||"")}</td>`).join("")}</tr>`).join("");
+      out.push(`<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`);continue;
+    }
+    paragraph.push(line.trim());
+  }
+  flushAll();
+  return `<div class="markdown-body">${out.join("\n")}</div>`;
+}
+
+const SEC={
+ edu:{label:"Education",prefix:"Edu",f:[["school","School"],["degree","Degree"],["course","Field of study"],["start","Start"],["end","End"],["description","Description","area"]]},
+ work:{label:"Work experience",prefix:"Work",f:[["company","Company"],["position","Position"],["start","Start"],["end","End"],["description","Description","area"]]},
+ proj:{label:"Projects",prefix:"Proj",f:[["name","Name"],["stack","Stack (comma-separated)"],["repo","Repository"],["description","Description","area"]]},
+ act:{label:"Activities",prefix:"Act",f:[["organization","Organization"],["role","Role"],["start","Start"],["end","End"],["description","Description","area"]]}};
+const PF={
+ work_experience:{label:"Work experience",def:()=>({company_name:"",position:"",start_date:"",end_date:"",responsibilities:[]}),
+   f:[["company_name","Company"],["position","Position"],["start_date","Start"],["end_date","End"],["responsibilities","Bullet points (one per line)","lines"]]},
+ projects:{label:"Projects",def:()=>({project_name:"",technologies:[],link_to_repo:"",project_description:""}),
+   f:[["project_name","Name"],["technologies","Technologies (comma-separated)","csv"],["link_to_repo","Repository"],["project_description","Description","area"]]},
+ activities:{label:"Activities",def:()=>({organization:"",role:"",start_date:"",end_date:"",responsibilities:[]}),
+   f:[["organization","Organization"],["role","Role"],["start_date","Start"],["end_date","End"],["responsibilities","Bullet points (one per line)","lines"]]},
+ education:{label:"Education",def:()=>({school_name:"",degree:"",course:"",start_date:"",end_date:""}),
+   f:[["school_name","School"],["degree","Degree"],["course","Field of study"],["start_date","Start"],["end_date","End"]]}};
+const CAT_DEF=()=>({category_name:"",skills:[]});
+const STAGES=[["scrape","Scraping job offer"],["skills","Skill selection"],["select","Selecting experience & projects"],
+  ["rewrite","Rewriting descriptions"],["about","Writing the summary"],["build","Building CV profile"],["render","Compiling PDF"],["fit","AI fit assessment"]];
+const emptySchema=()=>({about:"",person:{name:"",email:"",phone:"",github:"",linkedin:""},edu:[],work:[],proj:[],act:[],skills:"",hobbies:""});
+const ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch{return null}};
+const S={schema:ls("autocv.schema")||emptySchema(),profile:null,jobId:null,stages:{},fitSummary:"",pdfReady:false};
+let activeEventSource=null;
+
+/* ---------- tabs ---------- */
+function tab(n){const b=document.querySelector(`#tabs button[data-tab="${n}"]`);if(!b||b.disabled)return;
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===n));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.id==="t-"+n))}
+$("#tabs").onclick=e=>{if(e.target.dataset.tab)tab(e.target.dataset.tab)};
+function setTabEnabled(name,enabled){const b=document.querySelector(`#tabs button[data-tab="${name}"]`);if(b)b.disabled=!enabled}
+function lockOutputTabs(){setTabEnabled("edit",false);setTabEnabled("latex",false)}
+function enableProgressTab(){setTabEnabled("progress",true)}
+function enableOutputTabs(){setTabEnabled("edit",true);setTabEnabled("latex",true)}
+
+/* ---------- generic form helpers ---------- */
+function setPath(o,p,v){const k=p.split(".");const last=k.pop();for(const x of k)o=o[x];o[last]=v}
+function field(path,label,val,kind){
+  const v=kind==="lines"?(val||[]).join("\n"):kind==="csv"?(val||[]).join(", "):(val??"");
+  const area=kind==="area"||kind==="lines";
+  return `<label>${label}${area?`<textarea data-p="${path}" data-k="${kind||""}" rows="${kind==="lines"?5:4}">${esc(v)}</textarea>`:`<input data-p="${path}" data-k="${kind||""}" value="${esc(v)}">`}</label>`}
+function dfield(path,label,val,kind,open){ /* long fields wrapped in a collapsible */
+  return `<details ${open?"open":""}><summary>${esc(label)}</summary>${field(path,label,val,kind)}</details>`}
+function bind(el,root,after,rerender){
+  el.addEventListener("input",e=>{const t=e.target,p=t.dataset.p;if(!p)return;let v=t.value;
+    if(t.dataset.k==="lines")v=v.split("\n");else if(t.dataset.k==="csv")v=v.split(",").map(s=>s.trim()).filter(Boolean);
+    setPath(root(),p,v);after()});
+  el.addEventListener("click",e=>{const d=e.target.dataset;
+    if(d.del){const p=d.del.split("."),i=+p.pop();let o=root();for(const x of p)o=o[x];o.splice(i,1);rerender();after()}
+    if(d.add){const p=d.add.split("."),last=p.pop();let o=root();for(const x of p)o=o[x];
+      o[last].push(d.def?JSON.parse(d.def):{});rerender();after()}});
+}
+
+/* ---------- schema (job_schema.md) ---------- */
+function renderSchema(){
+  const s=S.schema;
+  let h=`<h3>About</h3>`+dfield("about","About",s.about,"area",true)+`<h3>Contact details</h3><div class="grid">`+
+    [["name","Name"],["email","E-mail"],["phone","Phone"],["github","GitHub"],["linkedin","LinkedIn"]].map(([k,l])=>field("person."+k,l,s.person[k])).join("")+`</div>`;
+  for(const[k,d]of Object.entries(SEC)){
+    h+=`<h3>${d.label}</h3>`+s[k].map((it,i)=>`<fieldset><legend>${d.prefix}-${String(i+1).padStart(2,"0")}</legend><button class="x" data-del="${k}.${i}">Remove</button><div class="grid">${d.f.map(([n,l,a])=>a==="area"?dfield(`${k}.${i}.${n}`,l,it[n],a,false):field(`${k}.${i}.${n}`,l,it[n],a)).join("")}</div></fieldset>`).join("")
+      +`<button data-add="${k}">Add: ${d.label.toLowerCase()}</button>`}
+  h+=`<h3>Skills</h3>`+dfield("skills","Skills",s.skills,"area",true)+`<h3>Hobbies</h3>`+dfield("hobbies","Hobbies",s.hobbies,"area",true);
+  $("#t-schema .form").innerHTML=h;
+}
+function toMd(s){
+  let o=`## About\n\n${s.about.trim()}\n---\n\n## Person\n\n`+["name","email","phone","github","linkedin"].map(k=>`${k}: ${s.person[k]||""}`).join("\n")+"\n---\n\n";
+  for(const[k,d]of Object.entries(SEC))s[k].forEach((it,i)=>{o+=`## ${d.prefix}-${String(i+1).padStart(2,"0")}\n\n`+d.f.map(([n])=>n==="description"?`description:\n${(it.description||"").trim()}`:`${n}: ${it[n]||""}`).join("\n")+"\n---\n\n"});
+  return o+`## Skills\n\n${s.skills.trim()}\n---\n\n## Hobbies\n\n${s.hobbies.trim()}\n---\n\n`}
+function fromParsed(p){const s=emptySchema();s.about=(p.About||"").trim();Object.assign(s.person,p.Person||{});
+  const m={edu:"Education",work:"Work_experience",proj:"Projects",act:"Activities"};for(const k in m)s[k]=Object.values(p[m[k]]||{});
+  s.skills=(p.Skills||"").trim();s.hobbies=(p.Hobbies||"").trim();return s}
+bind($("#t-schema"),()=>S.schema,()=>ls("autocv.schema",S.schema),renderSchema);
+$("#file").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  const r=await fetch("/api/schema/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:await f.text()})});
+  const d=await r.json();if(!r.ok){alert(d.detail);return}
+  S.schema=fromParsed(d);ls("autocv.schema",S.schema);renderSchema();e.target.value=""};
+$("#save").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([toMd(S.schema)],{type:"text/markdown"}));a.download="job_schema.md";a.click()};
+$("#reset").onclick=()=>{if(confirm("Clear the whole profile?")){S.schema=emptySchema();ls("autocv.schema",S.schema);renderSchema()}};
+
+/* ---------- settings ---------- */
+const MODELS={
+ gemini:["gemini-4-argon","gemini-3.8-flash","gemini-3.7-flash","gemini-3.6-flash","gemini-3.5-flash","gemini-3.5-flash-lite","gemini-3.1-pro-preview","gemini-3-flash-preview","gemini-2.5-pro","gemini-2.5-flash","gemini-2.5-flash-lite"],
+ openai:["gpt-4.1","gpt-4.1-mini","gpt-4o","gpt-4o-mini","o3","o3-mini","o4-mini"],
+ anthropic:["claude-opus-5-5","claude-sonnet-4-5-20250929","claude-3-7-sonnet-latest","claude-3-5-haiku-latest"],
+ openai_compatible:[],
+ ollama:[]};
+const CFG=["provider","model","custommodel","baseurl","oabase","numctx","url","template"];
+const cfg0=ls("autocv.cfg")||{};CFG.forEach(k=>{if(cfg0[k]!=null && $("#"+k))$("#"+k).value=cfg0[k]});
+function setModelOptions(models,preferred=""){
+  const select=$("#model"), unique=[...new Set(models.filter(Boolean))];
+  select.innerHTML=unique.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  if(preferred && unique.includes(preferred))select.value=preferred;
+  else if(cfg0.model && unique.includes(cfg0.model))select.value=cfg0.model;
+  else if(unique.length)select.selectedIndex=0;
+}
+function provUI(){
+  const p=$("#provider").value;
+  $("#keybox").hidden=p==="ollama";
+  $("#oaibase").hidden=!(p==="openai"||p==="openai_compatible"||p==="anthropic");
+  $("#oll").hidden=p!=="ollama";
+  $("#oabase").placeholder=p==="anthropic"?"https://api.anthropic.com":p==="openai_compatible"?"https://openrouter.ai/api/v1":"https://api.openai.com/v1";
+  $("#modelmsg").textContent="";
+  if(p==="ollama")refreshModels();
+  else {setModelOptions(MODELS[p]||[],cfg0.model);refreshModels()}
+}
+async function refreshModels(){
+  const provider=$("#provider").value;
+  const previous=$("#model").value || cfg0.model || "";
+  const base=provider==="ollama"?($("#baseurl").value||"http://localhost:11434"):
+    ((provider==="openai"||provider==="openai_compatible"||provider==="anthropic")?$("#oabase").value:"");
+  const msg=$("#modelmsg");
+  msg.textContent="Loading model catalogue…";
+  try{
+    const r=await fetch("/api/models",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({provider,api_key:$("#apikey").value,base_url:base})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.detail||"Could not load models");
+    const models=(d.models&&d.models.length)?d.models:(MODELS[provider]||[]);
+    setModelOptions(models,previous);
+    msg.textContent=d.warning || (d.source==="remote"?`Live catalogue: ${models.length} compatible models`:`Suggested models: ${models.length}. Add an API key to fetch the full catalogue.`);
+  }catch(e){
+    const fallback=MODELS[provider]||[];
+    setModelOptions(fallback,previous);
+    msg.textContent=fallback.length?`Using suggested IDs. Add an API key for the full live catalogue. (${e.message})`:e.message;
+  }
+}
+$("#refresh-models").onclick=refreshModels;
+$("#provider").onchange=()=>{cfg0.model="";$("#custommodel").value="";provUI()};
+$("#apikey").addEventListener("change",refreshModels);
+$("#oabase").addEventListener("change",refreshModels);
+$("#baseurl").addEventListener("change",refreshModels);
+$("#t-settings").addEventListener("input",()=>ls("autocv.cfg",Object.fromEntries(CFG.map(k=>[k,$("#"+k).value]))));
+const cfg=()=>({provider:$("#provider").value,model:$("#custommodel").value.trim()||$("#model").value,
+  api_key:$("#apikey").value,
+  base_url:$("#provider").value==="ollama"?$("#baseurl").value:
+    ((["openai","openai_compatible","anthropic"].includes($("#provider").value))?$("#oabase").value:""),
+  num_ctx:+$("#numctx").value||8192,url:$("#url").value.trim(),template:$("#template").value||"cv.tex.j2"});
+fetch("/api/templates").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  const t=$("#template");t.innerHTML=(d.templates||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+  if(cfg0.template)t.value=cfg0.template}).catch(()=>{ $("#template").innerHTML=`<option value="cv.tex.j2">cv.tex.j2</option>`});
+
+/* ---------- pre-generation LaTeX template preview ---------- */
+let templatePreviewObjectUrl="", templatePreviewSeq=0;
+async function previewSelectedTemplate(){
+  const template=$("#template").value;
+  if(!template){alert("Choose a LaTeX template first.");return}
+  const requestSeq=++templatePreviewSeq;
+  $("#template-modal").hidden=false;
+  $("#template-preview-title").textContent=`Template preview — ${template}`;
+  $("#template-preview-status").textContent="Compiling a sample CV with the selected template…";
+  $("#template-preview-pdf").src="about:blank";
+  $("#preview-template").disabled=true;
+  try{
+    const r=await fetch(`/api/templates/preview.pdf?template=${encodeURIComponent(template)}&v=${Date.now()}`,{cache:"no-store"});
+    if(!r.ok){
+      let message=`Preview request failed (${r.status})`;
+      try{const body=await r.json();message=body.detail||message}catch{}
+      throw new Error(message);
+    }
+    const contentType=r.headers.get("content-type")||"";
+    if(!contentType.toLowerCase().includes("application/pdf"))throw new Error("The server did not return a PDF preview.");
+    const blob=await r.blob();
+    if(requestSeq!==templatePreviewSeq)return;
+    if(templatePreviewObjectUrl)URL.revokeObjectURL(templatePreviewObjectUrl);
+    templatePreviewObjectUrl=URL.createObjectURL(blob);
+    $("#template-preview-pdf").src=templatePreviewObjectUrl;
+    $("#template-preview-status").textContent="Sample CV with placeholder data — this is the selected template's actual LaTeX output. Close this window and select another template to compare layouts.";
+  }catch(e){
+    if(requestSeq!==templatePreviewSeq)return;
+    $("#template-preview-status").textContent=`Could not preview this template: ${e.message||e}. Check that LaTeX is installed and the template compiles.`;
+    $("#template-preview-pdf").src="about:blank";
+  }finally{
+    if(requestSeq===templatePreviewSeq)$("#preview-template").disabled=false;
+  }
+}
+function closeTemplatePreview(){
+  templatePreviewSeq++;
+  $("#template-modal").hidden=true;
+  $("#template-preview-pdf").src="about:blank";
+  if(templatePreviewObjectUrl){URL.revokeObjectURL(templatePreviewObjectUrl);templatePreviewObjectUrl=""}
+  $("#preview-template").disabled=false;
+}
+$("#preview-template").onclick=previewSelectedTemplate;
+$("#close-template-preview").onclick=closeTemplatePreview;
+$("#template-modal").addEventListener("click",e=>{if(e.target===$("#template-modal"))closeTemplatePreview()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#template-modal").hidden)closeTemplatePreview()});
+
+/* ---------- generation progress ---------- */
+function renderStages(){
+  $("#stages").innerHTML=STAGES.map(([k,label])=>{
+    const s=S.stages[k]||{status:"pending"};
+    const mark={pending:"○",done:"✓",error:"✕"}[s.status]||`<span class="spin dark"></span>`;
+    let detail="";
+    if(s.detail){
+      const raw=String(s.detail), head=esc(s.summary||raw.split("\n")[0].slice(0,150));
+      if(k==="scrape"){
+        detail=`<div class="stage-summary">${head}</div><details><summary>View the complete scraped job offer</summary><pre>${esc(raw)}</pre></details>`;
+      }else if(k==="fit"){
+        detail=`<div class="stage-summary">AI assessment is ready. Open to read the full result.</div><details><summary>View AI fit assessment</summary>${renderMarkdown(raw)}</details>`;
+      }else if(raw.length>140){
+        detail=`<div class="stage-summary">${head}${s.summary?"":"…"}</div><details><summary>View full details</summary><pre>${esc(raw)}</pre></details>`;
+      }else{
+        detail=`<pre>${esc(raw)}</pre>`;
+      }
+    }else if(s.summary){detail=`<div class="stage-summary">${esc(s.summary)}</div>`}
+    return `<div class="stage ${s.status}"><span class="mark">${mark}</span><b>${label}</b>${detail}</div>`;
+  }).join("");
+}
+function renderFitSummary(){
+  const el=$("#fit-summary");
+  if(!S.fitSummary){el.hidden=true;el.innerHTML="";return}
+  const score=S.fitSummary.match(/(?:fit score|overall fit|match score|score)[^\d]{0,24}(\d+(?:\.\d+)?)\s*(?:\/\s*10|out of 10)/i);
+  el.hidden=false;
+  el.innerHTML=`<details class="fit-summary" open><summary>AI Fit Summary — based on your CV and the selected job offer</summary>${score?`<div class="fit-score">Fit score: ${esc(score[1])}/10</div>`:""}${renderMarkdown(S.fitSummary)}</details>`;
+}
+function setStat(t,mode){
+  $("#status").textContent=t;
+  $("#statusicon").className=mode==="busy"?"busy":mode==="err"?"err":mode==="ok"?"ok":"";
+  $("#statusicon").setAttribute("aria-label",mode==="busy"?"Working":mode==="err"?"Error":mode==="ok"?"Ready":"Idle");
+}
+function clearPreview(){
+  $("#dlpdf").hidden=true;$("#dlpdf").removeAttribute("href");
+  $("#dltex").hidden=true;$("#err").hidden=true;$("#err").textContent="";
+  $("#pdf").src="about:blank";
+}
+function markPdfReady(tex){
+  S.pdfReady=true;
+  if(tex)$("#tex").value=tex;
+  enableOutputTabs();
+  showPdf();
+  $("#err").hidden=true;
+  $("#gen").disabled=false;
+  setStat("PDF ready · AI assessment can finish in the background","ok");
+  tab("edit");
+}
+async function generate(){
+  const c=cfg();if(!c.model||!c.url){tab("settings");alert("Select a model and provide the job offer URL.");return}
+  if(activeEventSource){activeEventSource.close();activeEventSource=null}
+  S.stages={};S.profile=null;S.fitSummary="";S.pdfReady=false;S.jobId=null;
+  renderStages();renderFitSummary();clearPreview();
+  enableProgressTab();lockOutputTabs();tab("progress");
+  $("#gen").disabled=true;setStat("Building your CV and compiling the PDF","busy");
+  try{
+    const r=await fetch("/api/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...c,schema_md:toMd(S.schema)})});
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||"Failed to start the job")}
+    S.jobId=(await r.json()).job_id;
+    const requestJobId=S.jobId;
+    const es=new EventSource(`/api/jobs/${requestJobId}/events`);
+    activeEventSource=es;
+    es.onmessage=m=>{
+      if(S.jobId!==requestJobId){es.close();return}
+      const e=JSON.parse(m.data);
+      if(e.stage==="end"){
+        es.close();if(activeEventSource===es)activeEventSource=null;$("#gen").disabled=false;
+        if(e.status==="done"){
+          if(S.pdfReady)setStat(S.stages.fit?.status==="error"?"PDF ready · AI assessment failed":"PDF ready", "ok");
+          else {lockOutputTabs();setStat("Generation ended without a PDF","err");tab("progress")}
+        }else{
+          setStat("Generation failed before the PDF was ready","err");
+          if(!S.pdfReady){lockOutputTabs();tab("progress");}
+        }
+        return;
+      }
+      if(e.stage==="profile"){
+        S.profile=e.profile;renderEdit();return;
+      }
+      if(e.tex)$("#tex").value=e.tex;
+      const previous=S.stages[e.stage]||{};
+      S.stages[e.stage]={status:e.status,detail:e.detail||previous.detail,summary:e.summary||previous.summary};
+      renderStages();
+      if(e.stage==="render"&&e.status==="done")markPdfReady(e.tex);
+      if(e.stage==="render"&&e.status==="error"){
+        $("#err").textContent=e.detail||"PDF compilation failed.";$("#err").hidden=false;
+        lockOutputTabs();tab("progress");setStat("PDF compilation failed","err");
+      }
+      if(e.stage==="fit"&&e.status==="done"){
+        S.fitSummary=e.detail||"No AI assessment was returned.";renderFitSummary();
+        if(S.pdfReady)setStat("PDF ready · AI assessment complete","ok");
+      }else if(e.stage==="fit"&&e.status==="error"){
+        S.fitSummary=e.detail||"AI assessment failed.";renderFitSummary();
+        if(S.pdfReady)setStat("PDF ready · AI assessment failed","ok");
+      }
+    };
+    es.onerror=()=>{
+      es.close();if(activeEventSource===es)activeEventSource=null;
+      if(S.jobId!==requestJobId)return;
+      $("#gen").disabled=false;
+      if(S.pdfReady){setStat("PDF ready · progress connection closed","ok");}
+      else{setStat("Connection lost before PDF was ready","err");lockOutputTabs();tab("progress")}
+    };
+  }catch(e){
+    $("#gen").disabled=false;lockOutputTabs();setStat("Could not start generation","err");tab("progress");alert(e.message||String(e));
+  }
+}
+$("#gen").onclick=generate;
+
+/* ---------- live edit + preview ---------- */
+function renderEdit(){
+  const p=S.profile;if(!p)return;
+  p.categorized_skills=p.categorized_skills||{categories:[]};
+  p.categorized_skills.categories=p.categorized_skills.categories||[];
+  let h=`<h3>Summary</h3>`+dfield("summary","Summary",p.summary,"area",true)+`<h3>Skills</h3>`+
+   p.categorized_skills.categories.map((c,i)=>`<fieldset><legend>${esc(c.category_name||`Category ${i+1}`)}</legend><button class="x" data-del="categorized_skills.categories.${i}">Remove</button><div class="grid">${field(`categorized_skills.categories.${i}.category_name`,"Category name",c.category_name)}${field(`categorized_skills.categories.${i}.skills`,"Skills (comma-separated)",c.skills,"csv")}</div></fieldset>`).join("")+
+   `<button data-add="categorized_skills.categories" data-def='{"category_name":"","skills":[]}'>Add skill category</button>`;
+  for(const[k,d]of Object.entries(PF)){
+    if(!Array.isArray(p[k]))p[k]=[];
+    h+=`<h3>${d.label}</h3>`+p[k].map((it,i)=>{
+      const emptyLabel={work_experience:"New work entry",projects:"New project",activities:"New activity",education:"New education entry"}[k];
+      const legend=it.company_name||it.project_name||it.organization||it.school_name||emptyLabel;
+      return `<fieldset><legend>${esc(legend)}</legend><button class="x" data-del="${k}.${i}">Remove</button><div class="grid">${d.f.map(([n,l,kind])=>kind==="area"||kind==="lines"?dfield(`${k}.${i}.${n}`,l,it[n],kind,kind==="lines"):field(`${k}.${i}.${n}`,l,it[n],kind)).join("")}</div></fieldset>`;
+    }).join("")+`<button data-add="${k}" data-def='${esc(JSON.stringify(d.def()))}'>Add ${d.label.toLowerCase()} entry</button>`;
+  }
+  $("#t-edit .form").innerHTML=h;
+  renderFitSummary();
+}
+bind($("#t-edit"),()=>S.profile,()=>scheduleRender(),renderEdit);
+$("#tex").addEventListener("input",()=>scheduleRender("tex"));
+let seq=0,timer;
+function scheduleRender(mode){clearTimeout(timer);setStat("Edits pending","busy");timer=setTimeout(()=>renderNow(mode),900)}
+async function renderNow(mode){
+  if(!S.jobId||!S.pdfReady)return;const my=++seq;setStat("Applying CV edits…","busy");
+  const body=mode==="tex"?{tex:$("#tex").value}:{profile:S.profile,template:cfg().template};
+  try{const r=await fetch(`/api/jobs/${S.jobId}/render`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const d=await r.json();if(my!==seq)return;
+    if(d.tex&&mode!=="tex")$("#tex").value=d.tex;
+    if(d.ok){showPdf();setStat("PDF up to date","ok");$("#err").hidden=true}
+    else{$("#err").textContent=d.error||JSON.stringify(d.detail);$("#err").hidden=false;setStat("LaTeX error","err")}}
+  catch(e){if(my===seq)setStat("Connection error","err")}}
+function showPdf(){if(!S.jobId||!S.pdfReady)return;const u=`/api/jobs/${S.jobId}/cv.pdf`;$("#pdf").src=u+"?v="+Date.now();$("#dlpdf").href=u;$("#dlpdf").hidden=false;$("#dltex").hidden=false}
+$("#dltex").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("#tex").value],{type:"text/x-tex"}));a.download="cv.tex";a.click()};
+
+/* ---------- init ---------- */
+renderSchema();renderStages();renderFitSummary();provUI();lockOutputTabs();setTabEnabled("progress",false);tab("settings");setStat("Ready");
+</script>
+</body>
+</html>
