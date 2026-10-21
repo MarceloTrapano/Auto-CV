@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
-from base import ScrapingStrategy
+from .base import ScrapingStrategy
 
 
 class LinkedinStrategy(ScrapingStrategy):
