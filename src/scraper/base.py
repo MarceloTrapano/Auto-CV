@@ -11,5 +11,5 @@ class ScrapingStrategy(ABC):
         self.url = url
 
     @abstractmethod
-    def scrap(self):
+    def scrap(self) -> str:
         pass
