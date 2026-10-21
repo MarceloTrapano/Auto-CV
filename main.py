@@ -6,6 +6,7 @@ from pathlib import Path
 from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+from src.scraper import NoFluffJobsStrategy, PracujStrategy, LinkedinStrategy
 from src import LLMAgent, JobSchemaParser, build_selection_schema, SkillsResult, build_profile, render_cv
 from src.render import TEMPLATE_DIR
 
@@ -36,7 +37,7 @@ def main():
         prog="AutoCV",
         description="Generate CV from candidate profile based on job offer")
     parser.add_argument("filename", help="Path to the candidate profile file")
-    parser.add_argument("job_offer", help="Path to the job offer .txt file")
+    parser.add_argument("job_offer", help="Url to job offer site")
     parser.add_argument("--out-dir", type=str, default=DEFAULT_OUT_DIR,
                         help=f"Output directory (default: {DEFAULT_OUT_DIR})")
     parser.add_argument("--template", type=str, default=DEFAULT_TEMPLATE,
@@ -46,20 +47,30 @@ def main():
     with open(args.filename, "r", encoding="utf-8") as file:
         biography = file.read()
 
-    with open(args.job_offer, "r", encoding="utf-8") as file:
-        job_offer = file.read()
+    url = args.job_offer
+
+    if "linkedin" in url:
+        strategy = LinkedinStrategy(url)
+    elif "nofluffjobs" in url:
+        strategy = NoFluffJobsStrategy(url)
+    elif "pracuj" in url:
+        strategy = PracujStrategy(url)
+    else:
+        raise ValueError("Wrong url")
+
+    job_offer = strategy.scrap()
 
     logger.info("Creating llm")
-    # llm = ChatGoogleGenerativeAI(
-    #    # "gemini-2.5-flash-lite",  # "gemma-4-31b-it",  # "gemma-4-26b-a4b-it"
-    #    model="gemini-3.1-flash-lite",
-    #    temperature=0,
-    # )
-    llm = ChatOllama(
-        model="qwen2.5:3b-instruct",  # qwen3:30b-a3b
+    llm = ChatGoogleGenerativeAI(
+        # "gemini-2.5-flash-lite",  # "gemma-4-31b-it",  # "gemma-4-26b-a4b-it"
+        model="gemini-3.1-flash-lite",
         temperature=0,
-        num_ctx=8192
     )
+    # llm = ChatOllama(
+    #    model="qwen2.5:3b-instruct",  # qwen3:30b-a3b
+    #    temperature=0,
+    #    num_ctx=8192
+    # )
 
     logger.info("Creating skill extractor agent")
     skill_extractor = LLMAgent(
