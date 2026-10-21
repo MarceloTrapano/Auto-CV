@@ -7,6 +7,7 @@
 [![FastAPI](https://img.shields.io/badge/web%20UI-FastAPI-teal)](https://fastapi.tiangolo.com/)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama%20%7C%20API-black)](https://ollama.com/)
 [![LaTeX](https://img.shields.io/badge/output-LaTeX-green)](https://www.latex-project.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 *A Python-based tool that tailors your CV to a specific job offer. You describe your entire career once in a structured biography file, and Auto-CV uses an LLM (local or via API) to pick the most relevant parts, rewrite them for the target position and render the result through a LaTeX template. Use it from the command line or from the built-in web interface.*
 
