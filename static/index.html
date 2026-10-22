@@ -24,14 +24,14 @@ button.primary:hover{background:linear-gradient(180deg,#ffe2ba,#ff9d4d 43%,#e56d
 button:disabled{color:#9297a0;background:linear-gradient(#f7f6f2,#e6e4dd);border-color:#c9c7c0;cursor:default;box-shadow:none;text-shadow:none}
 main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(430px,1.04fr) minmax(340px,.96fr);margin:0 10px;background:var(--paper);border:1px solid #7c94b1;border-top:0;box-shadow:0 3px 12px #726e6455;overflow:hidden}
 #work,#preview{min-height:0;min-width:0;display:flex;flex-direction:column;background:#fff}
-#work{display:grid;grid-template-columns:130px minmax(0,1fr);border-right:1px solid #a6b2c2}
-#tabs{display:flex;flex-direction:column;gap:3px;padding:10px 7px;background:linear-gradient(180deg,#f8f6ef,#e8e4d7);border-right:1px solid #b9b4a8;min-height:0;overflow-y:auto}
-#tabs button{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:7px;width:100%;white-space:normal;text-align:left;padding:8px 7px;border:1px solid transparent;border-radius:4px;background:transparent;box-shadow:none;color:#364253;font-size:11px}
-#tabs button::before{content:"";width:7px;height:7px;flex:none;border:1px solid #a5a5a0;border-radius:2px;background:linear-gradient(#fff,#d8d8d3)}
-#tabs button:hover:not(:disabled){border-color:#e9ad78;background:linear-gradient(90deg,#fff8f0,#ffe7cc)}
-#tabs button[aria-selected=true]{color:#743400;font-weight:bold;border-color:#e7a56a;background:linear-gradient(90deg,#fff0df,#ffe0b9);box-shadow:inset 3px 0 0 var(--orange)}
+#work{position:relative;display:grid;grid-template-columns:130px minmax(0,1fr);border-right:1px solid #a6b2c2}
+#tabs{display:flex;flex-direction:column;gap:4px;padding:10px 7px 150px;background:linear-gradient(180deg,#7ba2e7 0%,#6f8fe0 45%,#6375d6 100%);border-right:1px solid #2f4fae;box-shadow:inset -1px 0 0 #9db8f0;min-height:0;overflow-y:auto}
+#tabs button{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:7px;width:100%;white-space:normal;text-align:left;padding:8px 7px;border:1px solid rgba(255,255,255,.3);border-radius:4px;background:rgba(255,255,255,.16);box-shadow:none;color:#fff;text-shadow:1px 1px 1px #1d3f94;font-size:11px}
+#tabs button::before{content:"";width:7px;height:7px;flex:none;border:1px solid #dbe7ff;border-radius:2px;background:rgba(255,255,255,.55)}
+#tabs button:hover:not(:disabled){border-color:#e9ad78;background:linear-gradient(90deg,#fff8f0,#ffe7cc);color:#743400;text-shadow:none}
+#tabs button[aria-selected=true]{color:#743400;text-shadow:none;font-weight:bold;border-color:#e7a56a;background:linear-gradient(90deg,#fff0df,#ffe0b9);box-shadow:inset 3px 0 0 var(--orange)}
 #tabs button[aria-selected=true]::before{border-color:var(--orange-dark);background:var(--orange)}
-#tabs button:disabled{color:#a8a8a2;background:transparent}
+#tabs button:disabled{color:rgba(255,255,255,.66);background:transparent;border-color:transparent;text-shadow:none}
 #tabs button:disabled::before{opacity:.4}
 .tab-host{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
 .tab{display:none;flex:1;min-height:0;overflow:auto;padding:15px 17px 30px;background:#fff}
@@ -50,7 +50,7 @@ legend{font-size:11px;color:#24496f;padding:0 6px;font-weight:bold}
 .x{position:absolute;top:-12px;right:8px;padding:2px 8px;font-size:10px}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}.hint{font-size:10px;color:var(--muted);margin:6px 0}.empty{color:#7b8694;padding:22px 0}
 details{border:1px solid #c6ced8;border-radius:3px;background:#f7f8fa;margin:6px 0;padding:3px 8px}summary{cursor:pointer;font-size:11px;font-weight:bold;color:#254e7a;padding:3px 0}summary:hover{color:var(--orange-dark)}details[open]{background:#fff;border-color:#e5b184}details pre{margin:5px 0 7px;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.5 Tahoma,Verdana,sans-serif;color:#333}
-.filelabel{display:block;min-width:180px;flex:1}#modelmsg{min-height:1em;overflow-wrap:anywhere}.fit-summary{margin:0 0 14px;padding:7px 10px;background:#fff8ef;border:1px solid #e9a565;border-top:3px solid var(--orange)}.fit-summary summary{color:#743400;font-size:12px}.fit-summary pre{max-height:unset;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0;font:12px/1.5 Tahoma,Verdana,sans-serif;color:#222}.fit-score{display:inline-block;padding:2px 8px;margin:4px 0;border:1px solid var(--orange-dark);background:#ffe1bd;font-weight:bold;border-radius:2px}
+.filelabel{display:block;min-width:180px;flex:1}#modelmsg{min-height:1em;overflow-wrap:anywhere}
 .markdown-body{font-size:12px;line-height:1.55;color:#222;overflow-wrap:anywhere;word-break:normal}
 .markdown-body>*:first-child{margin-top:0!important}
 .markdown-body>*:last-child{margin-bottom:0!important}
@@ -67,7 +67,7 @@ details{border:1px solid #c6ced8;border-radius:3px;background:#f7f8fa;margin:6px
 .markdown-body table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px;display:block;overflow-x:auto}
 .markdown-body th,.markdown-body td{border:1px solid #c7d1df;padding:5px 7px;text-align:left;vertical-align:top}
 .markdown-body th{background:#eaf2fc;color:#163f6a}.markdown-body tr:nth-child(even) td{background:#fafbfd}
-.fit-summary .markdown-body{margin-top:7px}.stage details .markdown-body{grid-column:2;max-height:min(55vh,520px);overflow:auto;overscroll-behavior:contain;padding:4px 8px 8px 0;scrollbar-gutter:stable}
+.stage details .markdown-body{grid-column:2;max-height:min(55vh,520px);overflow:auto;overscroll-behavior:contain;padding:4px 8px 8px 0;scrollbar-gutter:stable}
 
 .stage{display:grid;grid-template-columns:22px minmax(0,1fr);gap:3px 8px;padding:9px 1px;border-bottom:1px solid #e3e6ea}.mark{font-family:Tahoma;text-align:center;color:#a5abb3}.stage.done .mark{color:var(--green);font-weight:bold}.stage.error .mark,.stage.error b{color:var(--red)}.stage b{color:#233d5b}.stage pre{grid-column:2;margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.45 Tahoma,Verdana,sans-serif;color:var(--muted);max-height:5em;overflow:hidden}.stage details{grid-column:2;min-width:0;max-width:100%}.stage details pre{max-height:min(55vh,520px);overflow:auto;overscroll-behavior:contain;padding-right:8px; scrollbar-gutter:stable}.stage .stage-summary{grid-column:2;margin:2px 0;color:var(--muted);overflow-wrap:anywhere}
 .spin{width:13px;height:13px;border-radius:50%;border:2px solid #efc8a7;border-top-color:var(--orange-dark);display:inline-block;animation:rot .7s linear infinite;vertical-align:-3px}@keyframes rot{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
@@ -80,9 +80,10 @@ details{border:1px solid #c6ced8;border-radius:3px;background:#f7f8fa;margin:6px
 .template-modal-head{display:flex;align-items:center;gap:10px;padding:8px 11px;color:#fff;background:linear-gradient(180deg,#76b6ff,#1769bd 55%,#06418c);border-bottom:2px solid #ee8124}.template-modal-head strong{overflow-wrap:anywhere}.template-modal-head .status-spacer{flex:1}
 .template-modal-status{padding:7px 11px;margin:0;background:#fff8ef;border-bottom:1px solid #e4b184;color:#633a1b;font-size:11px}
 #template-preview-pdf{display:block;flex:1;min-height:0;width:100%;border:0;background:#e7eaf0}
-@media(max-width:920px){body{overflow:auto}main{grid-template-columns:1fr;grid-template-rows:minmax(520px,65vh) minmax(420px,60vh);overflow:visible}#work{border-right:0;border-bottom:1px solid #9aa9bb}#work{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}#tabs{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid #b9b4a8;padding:5px;gap:4px}#tabs button{width:auto;min-width:max-content;padding:6px 9px}#tabs button[aria-selected=true]{box-shadow:inset 0 -3px 0 var(--orange)}#tabs button::before{display:none}header{margin:6px 6px 0}main{margin:0 6px}#statusbar{margin:0 6px 6px}}
+@media(max-width:920px){body{overflow:auto}main{grid-template-columns:1fr;grid-template-rows:minmax(520px,65vh) minmax(420px,60vh);overflow:visible}#work{border-right:0;border-bottom:1px solid #9aa9bb}#work{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}#tabs{flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid #2f4fae;padding:5px;gap:4px;background:linear-gradient(180deg,#7ba2e7,#6375d6)}#tabs button{width:auto;min-width:max-content;padding:6px 9px}#tabs button[aria-selected=true]{box-shadow:inset 0 -3px 0 var(--orange)}#tabs button::before{display:none}header{margin:6px 6px 0}main{margin:0 6px}#statusbar{margin:0 6px 6px}}
 @media(max-width:560px){.brand-copy p{display:none}.brand-copy h1{font-size:14px}.brand-mark{width:28px;height:28px}header{gap:7px;padding:7px}.header-generate{padding:6px 8px;font-size:10px}.tab{padding:11px 10px 24px}.grid{grid-template-columns:1fr}.grid label:has(textarea){grid-column:auto}.pbar{gap:5px;padding:6px}.preview-title strong{font-size:10px}.preview-actions button,.preview-actions .btn{font-size:10px;padding:4px 6px}}
 </style>
+<link rel="stylesheet" href="/static/companion/companion.css">
 </head>
 <body>
 <header>
@@ -151,7 +152,6 @@ details{border:1px solid #c6ced8;border-radius:3px;background:#f7f8fa;margin:6px
   <div class="tab" id="t-progress"><div id="stages"></div></div>
 
   <div class="tab" id="t-edit">
-    <div id="fit-summary" hidden></div>
     <div class="form"><p class="empty">Generate a CV first to edit it here. Every change refreshes the PDF preview.</p></div>
   </div>
 
@@ -182,6 +182,8 @@ details{border:1px solid #c6ced8;border-radius:3px;background:#f7f8fa;margin:6px
 </div>
 <footer id="statusbar" role="status" aria-live="polite"><span id="statusicon"></span><span id="status">Ready</span><span class="status-spacer"></span><span class="status-right">AutoCV</span></footer>
 
+<script src="/static/companion/rover-art.js"></script>
+<script src="/static/companion/companion.js"></script>
 <script>
 const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -253,8 +255,10 @@ const STAGES=[["scrape","Scraping job offer"],["skills","Skill selection"],["sel
   ["rewrite","Rewriting descriptions"],["about","Writing the summary"],["build","Building CV profile"],["render","Compiling PDF"],["fit","AI fit assessment"]];
 const emptySchema=()=>({about:"",person:{name:"",email:"",phone:"",github:"",linkedin:""},edu:[],work:[],proj:[],act:[],skills:"",hobbies:""});
 const ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch{return null}};
-const S={schema:ls("autocv.schema")||emptySchema(),profile:null,jobId:null,stages:{},fitSummary:"",pdfReady:false};
+const S={schema:ls("autocv.schema")||emptySchema(),profile:null,jobId:null,stages:{},pdfReady:false,lastEvent:-1,retries:0};
 let activeEventSource=null;
+/* The dog lives in static/companion/*; the app keeps working (without him) if those files are missing. */
+const CP=window.Companion||new Proxy({},{get:()=>()=>{}});
 
 /* ---------- tabs ---------- */
 function tab(n){const b=document.querySelector(`#tabs button[data-tab="${n}"]`);if(!b||b.disabled)return;
@@ -436,15 +440,9 @@ function renderStages(){
         detail=`<pre>${esc(raw)}</pre>`;
       }
     }else if(s.summary){detail=`<div class="stage-summary">${esc(s.summary)}</div>`}
+    if(s.status==="error"&&s.resumable)detail+=`<div class="stage-summary"><button type="button" class="primary" data-resume>▶ Resume from this stage</button><div class="hint">Stages that already finished are kept, so their tokens are not spent again. The model and API key from Settings are used, so you can change them first.</div></div>`;
     return `<div class="stage ${s.status}"><span class="mark">${mark}</span><b>${label}</b>${detail}</div>`;
   }).join("");
-}
-function renderFitSummary(){
-  const el=$("#fit-summary");
-  if(!S.fitSummary){el.hidden=true;el.innerHTML="";return}
-  const score=S.fitSummary.match(/(?:fit score|overall fit|match score|score)[^\d]{0,24}(\d+(?:\.\d+)?)\s*(?:\/\s*10|out of 10)/i);
-  el.hidden=false;
-  el.innerHTML=`<details class="fit-summary" open><summary>AI Fit Summary — based on your CV and the selected job offer</summary>${score?`<div class="fit-score">Fit score: ${esc(score[1])}/10</div>`:""}${renderMarkdown(S.fitSummary)}</details>`;
 }
 function setStat(t,mode){
   $("#status").textContent=t;
@@ -466,65 +464,96 @@ function markPdfReady(tex){
   setStat("PDF ready · AI assessment can finish in the background","ok");
   tab("edit");
 }
+/* Attaches to the job's event stream. `after` = index of the last event already received;
+   the server replays everything newer, so a dropped connection never restarts the job. */
+function listen(jobId,after){
+  const es=new EventSource(`/api/jobs/${jobId}/events?after=${after}`);
+  activeEventSource=es;
+  es.onmessage=m=>{
+    if(S.jobId!==jobId){es.close();return}
+    if(m.lastEventId!=="")S.lastEvent=Number(m.lastEventId);
+    S.retries=0;
+    const e=JSON.parse(m.data);
+    if(e.stage==="end"){
+      es.close();if(activeEventSource===es)activeEventSource=null;$("#gen").disabled=false;
+      if(e.status==="done"){
+        if(S.pdfReady)setStat(S.stages.fit?.status==="error"?"PDF ready · AI assessment failed — you can resume it":"PDF ready", "ok");
+        else {lockOutputTabs();setStat("Generation ended without a PDF","err");tab("progress");CP.sleep()}
+      }else{
+        setStat("Generation failed — press “Resume” in Progress to continue without repeating finished stages","err");
+        if(!S.pdfReady){lockOutputTabs();tab("progress");}
+      }
+      return;
+    }
+    if(e.stage==="profile"){
+      S.profile=e.profile;renderEdit();return;
+    }
+    if(e.tex)$("#tex").value=e.tex;
+    const previous=S.stages[e.stage]||{};
+    S.stages[e.stage]={status:e.status,detail:e.detail||previous.detail,summary:e.summary||previous.summary,resumable:e.status==="error"&&!!e.resumable};
+    renderStages();CP.onEvent(e);
+    if(e.stage==="render"&&e.status==="done")markPdfReady(e.tex);
+    if(e.stage==="render"&&e.status==="error"){
+      $("#err").textContent=e.detail||"PDF compilation failed.";$("#err").hidden=false;
+      lockOutputTabs();tab("progress");setStat("PDF compilation failed","err");
+    }
+    if(e.stage==="fit"&&e.status==="done"){
+      if(S.pdfReady)setStat("PDF ready · AI assessment complete","ok");
+    }else if(e.stage==="fit"&&e.status==="error"){
+      if(S.pdfReady)setStat("PDF ready · AI assessment failed","ok");
+    }
+  };
+  es.onerror=()=>{
+    es.close();if(activeEventSource===es)activeEventSource=null;
+    if(S.jobId!==jobId)return;
+    /* The server keeps running the job; only this browser connection dropped, so re-attach. */
+    if(S.retries<5){
+      S.retries++;setStat(`Connection lost — reconnecting (${S.retries}/5)…`,"busy");
+      setTimeout(()=>{if(S.jobId===jobId&&!activeEventSource)listen(jobId,S.lastEvent)},1000*S.retries);
+      return;
+    }
+    $("#gen").disabled=false;
+    if(S.pdfReady){setStat("PDF ready · progress connection closed","ok");}
+    else{setStat("Connection lost before PDF was ready","err");lockOutputTabs();tab("progress");CP.sleep()}
+  };
+}
 async function generate(){
   const c=cfg();if(!c.model||!c.url){tab("settings");alert("Select a model and provide the job offer URL.");return}
   if(activeEventSource){activeEventSource.close();activeEventSource=null}
-  S.stages={};S.profile=null;S.fitSummary="";S.pdfReady=false;S.jobId=null;
-  renderStages();renderFitSummary();clearPreview();
+  S.stages={};S.profile=null;S.pdfReady=false;S.jobId=null;S.lastEvent=-1;S.retries=0;
+  renderStages();clearPreview();
   enableProgressTab();lockOutputTabs();tab("progress");
-  $("#gen").disabled=true;setStat("Building your CV and compiling the PDF","busy");
+  $("#gen").disabled=true;setStat("Building your CV and compiling the PDF","busy");CP.start();
   try{
     const r=await fetch("/api/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...c,schema_md:toMd(S.schema)})});
     if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||"Failed to start the job")}
     S.jobId=(await r.json()).job_id;
-    const requestJobId=S.jobId;
-    const es=new EventSource(`/api/jobs/${requestJobId}/events`);
-    activeEventSource=es;
-    es.onmessage=m=>{
-      if(S.jobId!==requestJobId){es.close();return}
-      const e=JSON.parse(m.data);
-      if(e.stage==="end"){
-        es.close();if(activeEventSource===es)activeEventSource=null;$("#gen").disabled=false;
-        if(e.status==="done"){
-          if(S.pdfReady)setStat(S.stages.fit?.status==="error"?"PDF ready · AI assessment failed":"PDF ready", "ok");
-          else {lockOutputTabs();setStat("Generation ended without a PDF","err");tab("progress")}
-        }else{
-          setStat("Generation failed before the PDF was ready","err");
-          if(!S.pdfReady){lockOutputTabs();tab("progress");}
-        }
-        return;
-      }
-      if(e.stage==="profile"){
-        S.profile=e.profile;renderEdit();return;
-      }
-      if(e.tex)$("#tex").value=e.tex;
-      const previous=S.stages[e.stage]||{};
-      S.stages[e.stage]={status:e.status,detail:e.detail||previous.detail,summary:e.summary||previous.summary};
-      renderStages();
-      if(e.stage==="render"&&e.status==="done")markPdfReady(e.tex);
-      if(e.stage==="render"&&e.status==="error"){
-        $("#err").textContent=e.detail||"PDF compilation failed.";$("#err").hidden=false;
-        lockOutputTabs();tab("progress");setStat("PDF compilation failed","err");
-      }
-      if(e.stage==="fit"&&e.status==="done"){
-        S.fitSummary=e.detail||"No AI assessment was returned.";renderFitSummary();
-        if(S.pdfReady)setStat("PDF ready · AI assessment complete","ok");
-      }else if(e.stage==="fit"&&e.status==="error"){
-        S.fitSummary=e.detail||"AI assessment failed.";renderFitSummary();
-        if(S.pdfReady)setStat("PDF ready · AI assessment failed","ok");
-      }
-    };
-    es.onerror=()=>{
-      es.close();if(activeEventSource===es)activeEventSource=null;
-      if(S.jobId!==requestJobId)return;
-      $("#gen").disabled=false;
-      if(S.pdfReady){setStat("PDF ready · progress connection closed","ok");}
-      else{setStat("Connection lost before PDF was ready","err");lockOutputTabs();tab("progress")}
-    };
+    listen(S.jobId,-1);
   }catch(e){
-    $("#gen").disabled=false;lockOutputTabs();setStat("Could not start generation","err");tab("progress");alert(e.message||String(e));
+    $("#gen").disabled=false;lockOutputTabs();setStat("Could not start generation","err");tab("progress");CP.sleep();alert(e.message||String(e));
   }
 }
+/* Continue a failed job from the failed stage (finished stages are not repeated). */
+async function resumeGeneration(){
+  if(!S.jobId)return;
+  const c=cfg();if(!c.model){tab("settings");alert("Select a model first.");return}
+  const failed=Object.keys(S.stages).filter(k=>S.stages[k].resumable);
+  failed.forEach(k=>S.stages[k].resumable=false);renderStages();
+  if(activeEventSource){activeEventSource.close();activeEventSource=null}
+  $("#gen").disabled=true;setStat("Resuming from the failed stage…","busy");CP.start();
+  try{
+    const r=await fetch(`/api/jobs/${S.jobId}/resume`,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({provider:c.provider,model:c.model,api_key:c.api_key,base_url:c.base_url,num_ctx:c.num_ctx,template:c.template})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.detail||"Failed to resume the job");
+    S.lastEvent=d.next_index-1;S.retries=0;
+    listen(S.jobId,S.lastEvent);
+  }catch(e){
+    failed.forEach(k=>S.stages[k].resumable=true);renderStages();
+    $("#gen").disabled=false;setStat("Could not resume generation","err");CP.fail("Could not resume",e.message||String(e),true);
+  }
+}
+$("#stages").addEventListener("click",e=>{if(e.target.closest("[data-resume]"))resumeGeneration()});
 $("#gen").onclick=generate;
 
 /* ---------- live edit + preview ---------- */
@@ -544,7 +573,6 @@ function renderEdit(){
     }).join("")+`<button data-add="${k}" data-def='${esc(JSON.stringify(d.def()))}'>Add ${d.label.toLowerCase()} entry</button>`;
   }
   $("#t-edit .form").innerHTML=h;
-  renderFitSummary();
 }
 bind($("#t-edit"),()=>S.profile,()=>scheduleRender(),renderEdit);
 $("#tex").addEventListener("input",()=>scheduleRender("tex"));
@@ -563,7 +591,8 @@ function showPdf(){if(!S.jobId||!S.pdfReady)return;const u=`/api/jobs/${S.jobId}
 $("#dltex").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("#tex").value],{type:"text/x-tex"}));a.download="cv.tex";a.click()};
 
 /* ---------- init ---------- */
-renderSchema();renderStages();renderFitSummary();provUI();lockOutputTabs();setTabEnabled("progress",false);tab("settings");setStat("Ready");
+CP.init({renderMarkdown,onResume:resumeGeneration,stages:Object.fromEntries(STAGES)});
+renderSchema();renderStages();provUI();lockOutputTabs();setTabEnabled("progress",false);tab("settings");setStat("Ready");
 </script>
 </body>
 </html>

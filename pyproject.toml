@@ -1,6 +1,6 @@
 [project]
 name = "AutoCV"
-version = "1.0.0"
+version = "1.1.0"
 description = "Generate resume aligned with job offer"
 readme = "README.md"
 license = "MIT"

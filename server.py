@@ -8,7 +8,6 @@ import asyncio
 import json
 import logging
 import os
-import queue
 import shutil
 import subprocess
 import tempfile
@@ -22,8 +21,9 @@ from pathlib import Path
 from typing import Any, get_args, get_origin, Union
 
 import requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
@@ -141,6 +141,16 @@ class RenderReq(BaseModel):
     template: str = DEFAULT_TEMPLATE
 
 
+class ResumeReq(BaseModel):
+    """LLM settings for continuing a failed job (the API key is never kept in the job)."""
+    provider: str
+    model: str
+    api_key: str = ""
+    base_url: str = ""
+    num_ctx: int = 8192
+    template: str | None = None
+
+
 class ModelListReq(BaseModel):
     provider: str
     api_key: str = ""
@@ -209,160 +219,239 @@ def fit_assessment(llm, offer: str, cv_text: str, about: str, skills, facts: str
     return llm.invoke([("system", FIT_SYSTEM_PROMPT), ("human", prompt)]).text
 
 
+# Pipeline stage -> key in job["state"] that is set once the stage has finished.
+# On resume, every stage whose key is already present is skipped, so tokens
+# spent on it are not spent again.
+STAGE_CHECKPOINTS = (
+    ("scrape", "offer"), ("skills", "skills"), ("select", "select_reported"),
+    ("rewrite", "rewrite_done"), ("about", "about"), ("build", "profile"),
+    ("render", "rendered"), ("fit", "fit"),
+)
+
+
+def next_stage(state: dict) -> str:
+    """First pipeline stage that has no checkpoint yet."""
+    return next((s for s, key in STAGE_CHECKPOINTS if key not in state), "fit")
+
+
+def _publish(job: dict, item: dict) -> None:
+    """Append an event to the job's log and wake up every SSE stream waiting for it."""
+    with job["cond"]:
+        job["log"].append(item)
+        job["cond"].notify_all()
+
+
+def _wait_for_event(job: dict, idx: int, timeout: float = 15.0) -> dict | None:
+    """Block until event number `idx` exists (None on timeout, used for keep-alives)."""
+    with job["cond"]:
+        job["cond"].wait_for(lambda: len(job["log"]) > idx, timeout=timeout)
+        return job["log"][idx] if len(job["log"]) > idx else None
+
+
 def pipeline(job: dict, req: JobReq) -> None:
-    q: queue.Queue = job["q"]
-    cur = {"s": "scrape"}
+    """Run the CV pipeline, skipping every stage already stored in job["state"].
+
+    Each stage saves its result right after the LLM call succeeds. When a call
+    fails (network error, rate limit, ...) the job becomes "failed" and
+    POST /api/jobs/{id}/resume calls this function again: finished stages are
+    skipped and work continues from the stage that failed.
+    """
+    st: dict = job["state"]
+    cur = {"s": next_stage(st)}
 
     def ev(stage, status, **data):
         job["last_used"] = time.time()
         if status == "running":
             cur["s"] = stage
-        q.put({"stage": stage, "status": status, **data})
+        _publish(job, {"stage": stage, "status": status, **data})
 
     try:
-        ev("scrape", "running")
-        offer = pick_strategy(req.url).scrap()
+        if "offer" not in st:
+            ev("scrape", "running")
+            offer = pick_strategy(req.url).scrap()
+            st["offer"] = offer
+            ev("scrape", "done", detail=offer,
+               summary=f"Scraped offer ready to review ({len(offer):,} characters).")
+        offer = st["offer"]
         job["offer"] = offer
-        ev("scrape", "done", detail=offer,
-           summary=f"Scraped offer ready to review ({len(offer):,} characters).")
+        cur["s"] = next_stage(st)  # errors below belong to the next stage, not to "scrape"
 
         llm = make_llm(req)
         bio = req.schema_md
-        path = job["dir"] / "profile.md"
-        path.write_text(bio, encoding="utf-8")
-        try:
-            parsed = JobSchemaParser(str(path)).parse()
-        finally:
-            path.unlink(missing_ok=True)  # temporary copy of the profile, no longer needed
+        if "parsed" not in st:
+            path = job["dir"] / "profile.md"
+            path.write_text(bio, encoding="utf-8")
+            try:
+                st["parsed"] = JobSchemaParser(str(path)).parse()
+            finally:
+                path.unlink(missing_ok=True)  # temporary copy of the profile, no longer needed
+        parsed = st["parsed"]
 
-        ev("skills", "running")
-        skills = LLMAgent(llm, SKILL_SYSTEM_PROMPT_PATH, SKILL_HUMAN_PROMPT_PATH
-                          ).invoke_with_schema(SkillsResult, profile=bio, job=offer)
-        ev("skills", "done", detail=skills.explanation)
+        # ---- skills --------------------------------------------------------
+        if "skills" not in st:
+            ev("skills", "running")
+            st["skills"] = LLMAgent(llm, SKILL_SYSTEM_PROMPT_PATH, SKILL_HUMAN_PROMPT_PATH
+                                    ).invoke_with_schema(SkillsResult, profile=bio, job=offer)
+            ev("skills", "done", detail=st["skills"].explanation)
+        skills = st["skills"]
 
-        ev("select", "running")
-        Selection = build_selection_schema(
-            list(parsed["Work_experience"]), list(parsed["Activities"]),
-            list(parsed["Education"]), list(parsed["Projects"]))
-        sel = LLMAgent(llm, ACTIVITY_SYSTEM_PROMPT_PATH, ACTIVITY_HUMAN_PROMPT_PATH
-                       ).invoke_with_schema(Selection, profile=bio, job=offer)
-        labels = [("work", "Work experience", "Work_experience", ("company", "company_name", "position")),
-                  ("activities", "Activities",
-                   "Activities", ("organization", "role")),
-                  ("education", "Education", "Education",
-                   ("school", "school_name", "degree")),
-                  ("projects", "Projects", "Projects", ("name", "project_name"))]
+        # ---- selection of experience / projects ---------------------------
+        if "sel" not in st:
+            ev("select", "running")
+            Selection = build_selection_schema(
+                list(parsed["Work_experience"]), list(parsed["Activities"]),
+                list(parsed["Education"]), list(parsed["Projects"]))
+            st["sel"] = LLMAgent(llm, ACTIVITY_SYSTEM_PROMPT_PATH, ACTIVITY_HUMAN_PROMPT_PATH
+                                 ).invoke_with_schema(Selection, profile=bio, job=offer)
+        sel = st["sel"]
 
-        def item_label(section, item_id, candidates):
-            """Return a readable label for a selected item.
+        if "select_reported" not in st:
+            labels = [("work", "Work experience", "Work_experience", ("company", "company_name", "position")),
+                      ("activities", "Activities",
+                       "Activities", ("organization", "role")),
+                      ("education", "Education", "Education",
+                       ("school", "school_name", "degree")),
+                      ("projects", "Projects", "Projects", ("name", "project_name"))]
 
-            Selection schema values are usually stable profile IDs such as
-            ``Work-02`` (not numeric list indexes), because parsed profile
-            sections are dictionaries keyed by those IDs.
-            """
-            entries = parsed.get(section, {})
-            item = None
-            if isinstance(entries, dict):
-                item = entries.get(item_id)
-                if item is None:
-                    item = entries.get(str(item_id))
-                # Also accept numeric IDs for older schema/parser variants.
-                if item is None:
+            def item_label(section, item_id, candidates):
+                """Return a readable label for a selected item.
+
+                Selection schema values are usually stable profile IDs such as
+                ``Work-02`` (not numeric list indexes), because parsed profile
+                sections are dictionaries keyed by those IDs.
+                """
+                entries = parsed.get(section, {})
+                item = None
+                if isinstance(entries, dict):
+                    item = entries.get(item_id)
+                    if item is None:
+                        item = entries.get(str(item_id))
+                    # Also accept numeric IDs for older schema/parser variants.
+                    if item is None:
+                        try:
+                            numeric_id = int(item_id)
+                            item = entries.get(
+                                numeric_id, entries.get(str(numeric_id)))
+                        except (TypeError, ValueError):
+                            pass
+                elif isinstance(entries, (list, tuple)):
                     try:
-                        numeric_id = int(item_id)
-                        item = entries.get(
-                            numeric_id, entries.get(str(numeric_id)))
+                        idx = int(item_id)
                     except (TypeError, ValueError):
-                        pass
-            elif isinstance(entries, (list, tuple)):
-                try:
-                    idx = int(item_id)
-                except (TypeError, ValueError):
-                    idx = -1
-                if 0 <= idx < len(entries):
-                    item = entries[idx]
+                        idx = -1
+                    if 0 <= idx < len(entries):
+                        item = entries[idx]
 
-            fallback = f"{section.replace('_', ' ')} — {item_id}"
-            if item is None:
-                return fallback
-            if isinstance(item, dict):
-                primary = next((str(item.get(key, "")).strip() for key in candidates
-                                if str(item.get(key, "")).strip()), "")
-                secondary = str(item.get("position", "")).strip()
-                if primary and secondary and secondary != primary and candidates[0] != "position":
-                    return f"{primary} — {secondary}"
-                return primary or fallback
-            return str(item).strip() or fallback
+                fallback = f"{section.replace('_', ' ')} — {item_id}"
+                if item is None:
+                    return fallback
+                if isinstance(item, dict):
+                    primary = next((str(item.get(key, "")).strip() for key in candidates
+                                    if str(item.get(key, "")).strip()), "")
+                    secondary = str(item.get("position", "")).strip()
+                    if primary and secondary and secondary != primary and candidates[0] != "position":
+                        return f"{primary} — {secondary}"
+                    return primary or fallback
+                return str(item).strip() or fallback
 
-        selection_blocks = []
-        selection_briefs = []
-        for key, label, section, name_candidates in labels:
-            names = [item_label(section, item_id, name_candidates)
-                     for item_id in getattr(sel, key)]
-            selection_briefs.append(
-                f"{label}: {', '.join(names) if names else 'None selected'}")
-            selection_blocks.append(
-                f"{label}:\n" +
-                ("\n".join(f"- {name}" for name in names) if names else "- None selected") +
-                f"\nReasoning: {getattr(sel, key + '_reasoning')}"
-            )
-        ev("select", "done", detail="\n\n".join(selection_blocks),
-           summary=" | ".join(selection_briefs))
+            selection_blocks = []
+            selection_briefs = []
+            for key, label, section, name_candidates in labels:
+                names = [item_label(section, item_id, name_candidates)
+                         for item_id in getattr(sel, key)]
+                selection_briefs.append(
+                    f"{label}: {', '.join(names) if names else 'None selected'}")
+                selection_blocks.append(
+                    f"{label}:\n" +
+                    ("\n".join(f"- {name}" for name in names) if names else "- None selected") +
+                    f"\nReasoning: {getattr(sel, key + '_reasoning')}"
+                )
+            ev("select", "done", detail="\n\n".join(selection_blocks),
+               summary=" | ".join(selection_briefs))
+            st["select_reported"] = True
 
+        # ---- rewriting descriptions (checkpointed per block) ---------------
         ghost = LLMAgent(llm, REWRITE_SYSTEM_PROMPT_PATH,
                          REWRITE_HUMAN_PROMPT_PATH)
         name_key = {"Work_experience": "company",
                     "Activities": "organization", "Projects": "name"}
-        descs = {"Work_experience": {}, "Activities": {}, "Projects": {}}
-        facts = ""
         todo = [("Work_experience", sel.work), ("Activities", sel.activities),
                 ("Projects", sel.projects)]
-        for section, ids in todo:
-            for i in ids:
-                name = parsed[section][i][name_key[section]]
+        descs = st.setdefault(
+            "descs", {"Work_experience": {}, "Activities": {}, "Projects": {}})
+        if "rewrite_done" not in st:
+            total = sum(len(ids) for _, ids in todo)
+            already = sum(len(v) for v in descs.values())
+            if already:
                 ev("rewrite", "running",
-                   detail=f"Rewriting {section.replace('_', ' ').lower()}: {name}…")
-                txt = ghost.invoke(
-                    block=parsed[section][i]["description"], job=offer).text
-                descs[section][i] = txt
-                facts += f"{name}: {txt}\n\n"
-        ev("rewrite", "done",
-           detail=f"Rewritten blocks: {sum(len(v) for v in descs.values())}")
+                   detail=f"Resuming: {already}/{total} blocks already rewritten, continuing…")
+            for section, ids in todo:
+                for i in ids:
+                    if i in descs[section]:
+                        continue  # rewritten before the failure, do not pay for it again
+                    name = parsed[section][i][name_key[section]]
+                    ev("rewrite", "running",
+                       detail=f"Rewriting {section.replace('_', ' ').lower()}: {name}…")
+                    descs[section][i] = ghost.invoke(
+                        block=parsed[section][i]["description"], job=offer).text
+            ev("rewrite", "done",
+               detail=f"Rewritten blocks: {sum(len(v) for v in descs.values())}")
+            st["rewrite_done"] = True
+        facts = "".join(
+            f"{parsed[section][i][name_key[section]]}: {descs[section][i]}\n\n"
+            for section, ids in todo for i in ids)
 
-        ev("about", "running")
-        about = LLMAgent(llm, ABOUT_SYSTEM_PROMPT_PATH, ABOUT_HUMAN_PROMPT_PATH).invoke(
-            job=offer, base_about=parsed["About"], selected_facts=facts,
-            selected_skills=skills.categories)
-        ev("about", "done", detail=about.text)
+        # ---- about ---------------------------------------------------------
+        if "about" not in st:
+            ev("about", "running")
+            st["about"] = LLMAgent(llm, ABOUT_SYSTEM_PROMPT_PATH, ABOUT_HUMAN_PROMPT_PATH).invoke(
+                job=offer, base_about=parsed["About"], selected_facts=facts,
+                selected_skills=skills.categories)
+            ev("about", "done", detail=st["about"].text)
+        about = st["about"]
 
-        ev("build", "running")
-        profile = build_profile(
-            about=about.text, education=sel.education,
-            work_experience=descs["Work_experience"], projects=descs["Projects"],
-            activities=descs["Activities"], skills=skills,
-            job_schema_parser_result=parsed)
-        ev("build", "done")
-        q.put({"stage": "profile", "status": "done",
-              "profile": profile.model_dump()})
+        # ---- build profile -------------------------------------------------
+        if "profile" not in st:
+            ev("build", "running")
+            st["profile"] = build_profile(
+                about=about.text, education=sel.education,
+                work_experience=descs["Work_experience"], projects=descs["Projects"],
+                activities=descs["Activities"], skills=skills,
+                job_schema_parser_result=parsed)
+            ev("build", "done")
+            _publish(job, {"stage": "profile", "status": "done",
+                           "profile": st["profile"].model_dump()})
+        profile = st["profile"]
 
-        ev("render", "running", summary="Building the PDF document.")
-        tex = render_tex(profile, template=req.template)
-        compile_tex(job, tex)
-        # The frontend can show the PDF and unlock editing as soon as this event arrives.
-        ev("render", "done", tex=tex, summary="PDF compiled successfully.")
+        # ---- render PDF ----------------------------------------------------
+        if "rendered" not in st:
+            ev("render", "running", summary="Building the PDF document.")
+            tex = render_tex(profile, template=req.template)
+            compile_tex(job, tex)
+            st["rendered"] = True
+            # The frontend can show the PDF and unlock editing as soon as this event arrives.
+            ev("render", "done", tex=tex, summary="PDF compiled successfully.")
+
+        # ---- AI fit assessment (background, after the PDF is ready) --------
+        if "fit" in st:
+            job["status"] = "done"
+            ev("end", "done")
+            return
 
         def assess_fit_in_background():
             try:
                 ev("fit", "running",
                    summary="The PDF is ready; AI assessment is running in the background.")
-                fit = fit_assessment(llm, offer, bio, about.text,
-                                     str(skills.categories), facts)
-                ev("fit", "done", detail=fit,
+                st["fit"] = fit_assessment(llm, offer, bio, about.text,
+                                           str(skills.categories), facts)
+                job["status"] = "done"
+                ev("fit", "done", detail=st["fit"],
                    summary="AI fit assessment completed.")
             except Exception as exc:  # noqa: BLE001
                 logger.exception(
                     "AI fit assessment failed after PDF compilation")
-                ev("fit", "error",
+                job["status"] = "failed"  # resumable: only the fit stage will be retried
+                ev("fit", "error", resumable=True,
                    detail=f"The PDF is ready, but the AI fit assessment failed: {exc}")
             finally:
                 # A fit failure must not turn a successfully compiled PDF into a failed job.
@@ -372,8 +461,9 @@ def pipeline(job: dict, req: JobReq) -> None:
                          name=f"autocv-fit-{job['dir'].name}", daemon=True).start()
         return
     except Exception as e:  # noqa: BLE001
-        logger.exception("Pipeline failed")
-        ev(cur["s"], "error", detail=str(e))
+        logger.exception("Pipeline failed at stage %s", cur["s"])
+        job["status"] = "failed"  # set before publishing so /resume is accepted immediately
+        ev(cur["s"], "error", detail=str(e), resumable=True)
         ev("end", "error")
 
 
@@ -382,24 +472,75 @@ def create_job(req: JobReq):
     job_id = uuid.uuid4().hex[:10]
     d = JOBS_DIR / job_id
     d.mkdir(parents=True)
-    job = {"q": queue.Queue(), "dir": d, "lock": threading.Lock(),
-           "last_used": time.time()}
+    job = {
+        "log": [], "cond": threading.Condition(),  # replayable event stream
+        "state": {},                               # stage checkpoints (see STAGE_CHECKPOINTS)
+        "status": "running",                       # running | failed | done
+        "resume_lock": threading.Lock(),
+        # The API key is deliberately not kept; the client sends it again on resume.
+        "req": req.model_copy(update={"api_key": ""}),
+        "dir": d, "lock": threading.Lock(), "last_used": time.time(),
+    }
     JOBS[job_id] = job
     threading.Thread(target=pipeline, args=(job, req), daemon=True).start()
     return {"job_id": job_id}
 
 
+@app.post("/api/jobs/{job_id}/resume")
+def resume_job(job_id: str, body: ResumeReq):
+    """Continue a failed job from the first stage without a saved result.
+
+    Stages that already finished are not repeated, so their tokens are not spent
+    again. The LLM settings (also the model) may be changed, e.g. after a quota error.
+    """
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(404, "No such job (it may have expired)")
+    if not body.model.strip():
+        raise HTTPException(400, "Select a model")
+    with job["resume_lock"]:
+        if job["status"] != "failed":
+            raise HTTPException(
+                409, "This job is not in a failed state, there is nothing to resume.")
+        job["status"] = "running"
+    req = job["req"].model_copy(update={
+        "provider": body.provider, "model": body.model.strip(),
+        "api_key": body.api_key, "base_url": body.base_url, "num_ctx": body.num_ctx,
+        "template": body.template or job["req"].template})
+    job["req"] = req.model_copy(update={"api_key": ""})
+    job["last_used"] = time.time()
+    with job["cond"]:
+        next_index = len(job["log"])  # the client attaches to events after this point
+    resume_stage = next_stage(job["state"])  # read before the thread starts changing the state
+    threading.Thread(target=pipeline, args=(job, req), daemon=True).start()
+    return {"job_id": job_id, "resume_stage": resume_stage, "next_index": next_index}
+
+
 @app.get("/api/jobs/{job_id}/events")
-async def events(job_id: str):
+async def events(job_id: str, request: Request, after: int | None = None):
+    """SSE stream of job events. Every event carries its index as the SSE `id`.
+
+    `?after=N` (or the Last-Event-ID header) replays everything after event N, so a
+    client that lost the connection can re-attach without restarting the job.
+    """
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(404, "No such job")
+    if after is None:
+        last = request.headers.get("last-event-id", "")
+        after = int(last) if last.lstrip("-").isdigit() else -1
+    start = max(after + 1, 0)
 
     async def gen():
         loop = asyncio.get_running_loop()
+        i = start
         while True:
-            item = await loop.run_in_executor(None, job["q"].get)
-            yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
+            item = await loop.run_in_executor(None, _wait_for_event, job, i)
+            if item is None:
+                yield ": keep-alive\n\n"
+                continue
+            yield f"id: {i}\ndata: {json.dumps(item, ensure_ascii=False)}\n\n"
+            i += 1
             if item["stage"] == "end":
                 break
 
@@ -732,6 +873,10 @@ def ollama_models(base_url: str = "http://localhost:11434"):
         return {"models": [m["name"] for m in r.json().get("models", [])]}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, f"Cannot connect to Ollama: {e}")
+
+
+# CSS/JS of the helper dog (static/companion/*) and any other front-end assets
+app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
 @app.get("/")
